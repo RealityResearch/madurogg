@@ -1,27 +1,22 @@
-import './globals.css'
 import type { Metadata } from 'next'
-import { Inter as FontSans } from 'next/font/google'
-import { cn } from '@/lib/utils'
-import { Analytics } from '@vercel/analytics/react'
+import { Inter } from 'next/font/google'
+import './globals.css'
 
-const fontSans = FontSans({ subsets: ['latin'], variable: '--font-sans' })
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Wheel',
-  description: 'Next.js project with shadcn UI'
+  title: 'Resume Optimizer | Land Your Dream Job',
+  description: 'AI-powered resume optimization that matches your skills to job requirements with recruiter-friendly keywords',
 }
 
 export default function RootLayout({
-  children
+  children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
-        {children}
-        <Analytics />
-      </body>
+    <html lang="en">
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }
