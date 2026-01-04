@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - MADURO.GG</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      min-height: 100vh;
+    }
+
+    .admin-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background: #111;
+      border-right: 1px solid #222;
+      padding: 20px;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-logo {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 30px;
+    }
+
+    .sidebar-logo span:first-child { color: #fff; }
+    .sidebar-logo span:last-child { color: #ff4444; }
+
+    .sidebar-nav {
+      list-style: none;
+    }
+
+    .sidebar-nav li {
+      margin-bottom: 5px;
+    }
+
+    .sidebar-nav a {
+      display: block;
+      padding: 12px 15px;
+      color: #888;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+
+    .sidebar-nav a.active {
+      background: rgba(255,68,68,0.2);
+      color: #ff4444;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 250px;
+      padding: 30px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .auth-section {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .auth-section input {
+      padding: 10px 15px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 14px;
+      width: 200px;
+    }
+
+    .auth-section button {
+      padding: 10px 20px;
+      background: #ff4444;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .auth-section button:hover {
+      background: #ff5555;
+    }
+
+    /* Cards */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .card-badge {
+      padding: 4px 10px;
+      background: rgba(74,222,128,0.2);
+      color: #4ade80;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+
+    .card-badge.warning {
+      background: rgba(251,191,36,0.2);
+      color: #fbbf24;
+    }
+
+    .card-badge.error {
+      background: rgba(255,68,68,0.2);
+      color: #ff4444;
+    }
+
+    /* Stats */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #ff4444;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #888;
+      margin-top: 5px;
+    }
+
+    /* Forms */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 15px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #ff4444;
+    }
+
+    .form-input::placeholder {
+      color: #555;
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      background: #ff4444;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: #ff5555;
+    }
+
+    .btn-secondary {
+      background: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #444;
+    }
+
+    .btn-success {
+      background: #4ade80;
+    }
+
+    .btn-success:hover {
+      background: #5ae890;
+    }
+
+    /* Room List */
+    .room-list {
+      list-style: none;
+    }
+
+    .room-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background: #1a1a1a;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .room-info {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .room-name {
+      font-weight: 500;
+    }
+
+    .room-state {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+
+    .room-state.playing {
+      background: rgba(74,222,128,0.2);
+      color: #4ade80;
+    }
+
+    .room-state.waiting {
+      background: rgba(251,191,36,0.2);
+      color: #fbbf24;
+    }
+
+    .room-state.countdown {
+      background: rgba(96,165,250,0.2);
+      color: #60a5fa;
+    }
+
+    .room-state.locked {
+      background: rgba(255,68,68,0.2);
+      color: #ff4444;
+    }
+
+    /* Sections */
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    /* Alert */
+    .alert {
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .alert.success {
+      background: rgba(74,222,128,0.2);
+      border: 1px solid rgba(74,222,128,0.3);
+      color: #4ade80;
+    }
+
+    .alert.error {
+      background: rgba(255,68,68,0.2);
+      border: 1px solid rgba(255,68,68,0.3);
+      color: #ff4444;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span>MADURO</span><span>.GG</span>
+      </div>
+      <ul class="sidebar-nav">
+        <li><a href="#dashboard" class="active" data-section="dashboard">Dashboard</a></li>
+        <li><a href="#config" data-section="config">Configuration</a></li>
+        <li><a href="#rooms" data-section="rooms">Rooms</a></li>
+        <li><a href="#rewards" data-section="rewards">Rewards</a></li>
+        <li><a href="#links" data-section="links">Social Links</a></li>
+        <li><a href="/" style="margin-top: 40px; color: #666;">← Back to Game</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-title">Admin Panel</h1>
+        <div class="auth-section">
+          <input type="password" id="admin-secret" placeholder="Admin Secret">
+          <button onclick="authenticate()">Unlock</button>
+        </div>
+      </div>
+
+      <div id="alert" class="alert"></div>
+
+      <!-- Dashboard Section -->
+      <section id="dashboard" class="section active">
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-players">0</div>
+            <div class="stat-label">Online Players</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-rooms">0</div>
+            <div class="stat-label">Active Rooms</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-pool">0</div>
+            <div class="stat-label">Prize Pool</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-distributed">0</div>
+            <div class="stat-label">Total Distributed</div>
+          </div>
+        </div>
+
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Server Status</h3>
+              <span class="card-badge" id="server-status">Checking...</span>
+            </div>
+            <p style="color: #888;">Game server is running and accepting connections.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Quick Actions</h3>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button class="btn btn-secondary" onclick="refreshStats()">Refresh Stats</button>
+              <button class="btn btn-secondary" onclick="getRooms()">View Rooms</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Configuration Section -->
+      <section id="config" class="section">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Token & Contract Configuration</h3>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Token Mint Address</label>
+            <input type="text" class="form-input" id="token-mint" placeholder="CmgJ1Pob...">
+            <p class="form-hint">The $MADURO token contract address from pump.fun</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Creator Wallet</label>
+            <input type="text" class="form-input" id="creator-wallet" placeholder="Your Solana wallet address">
+            <p class="form-hint">Wallet that receives creator fees and controls the escrow</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Escrow Contract Address</label>
+            <input type="text" class="form-input" id="contract-address" placeholder="DLLQxjj...">
+            <p class="form-hint">The deployed Anchor escrow contract</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">VRF Contract (Optional)</label>
+            <input type="text" class="form-input" id="vrf-contract" placeholder="VRF contract address or Solscan link">
+            <p class="form-hint">Verifiable Random Function contract for provably fair randomness</p>
+          </div>
+
+          <button class="btn" onclick="saveConfig()">Save Configuration</button>
+        </div>
+      </section>
+
+      <!-- Rooms Section -->
+      <section id="rooms" class="section">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Active Rooms</h3>
+            <button class="btn btn-secondary" onclick="getRooms()">Refresh</button>
+          </div>
+
+          <ul class="room-list" id="room-list">
+            <li class="room-item">
+              <span style="color: #888;">Loading rooms...</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Rewards Section -->
+      <section id="rewards" class="section">
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Prize Pool</h3>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Add to Prize Pool</label>
+              <input type="number" class="form-input" id="add-pool-amount" placeholder="Amount in tokens">
+            </div>
+
+            <button class="btn btn-success" onclick="addToPool()">Add to Pool</button>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Reward Stats</h3>
+            </div>
+
+            <div style="color: #888;">
+              <p><strong>Pool Balance:</strong> <span id="pool-balance">--</span></p>
+              <p><strong>Total Distributed:</strong> <span id="total-distributed">--</span></p>
+              <p><strong>Pending Rewards:</strong> <span id="pending-rewards">--</span></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Links Section -->
+      <section id="links" class="section">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Social Links</h3>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Twitter URL</label>
+            <input type="text" class="form-input" id="twitter-url" placeholder="https://twitter.com/madurogg">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Telegram URL</label>
+            <input type="text" class="form-input" id="telegram-url" placeholder="https://t.me/madurogg">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Discord URL</label>
+            <input type="text" class="form-input" id="discord-url" placeholder="https://discord.gg/...">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">pump.fun Token URL</label>
+            <input type="text" class="form-input" id="pump-url" placeholder="https://pump.fun/coin/...">
+          </div>
+
+          <button class="btn" onclick="saveLinks()">Save Links</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    let adminSecret = localStorage.getItem('adminSecret') || '';
+    document.getElementById('admin-secret').value = adminSecret;
+
+    // Navigation
+    document.querySelectorAll('.sidebar-nav a[data-section]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const section = link.dataset.section;
+
+        document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(section).classList.add('active');
+      });
+    });
+
+    function showAlert(message, type = 'success') {
+      const alert = document.getElementById('alert');
+      alert.textContent = message;
+      alert.className = `alert ${type}`;
+      alert.style.display = 'block';
+      setTimeout(() => alert.style.display = 'none', 5000);
+    }
+
+    function authenticate() {
+      adminSecret = document.getElementById('admin-secret').value;
+      localStorage.setItem('adminSecret', adminSecret);
+      refreshStats();
+      showAlert('Admin secret saved', 'success');
+    }
+
+    async function refreshStats() {
+      try {
+        // Get health/stats
+        const health = await fetch('/health').then(r => r.json());
+        document.getElementById('stat-players').textContent = health.players || 0;
+        document.getElementById('stat-rooms').textContent = health.rooms || 0;
+        document.getElementById('server-status').textContent = 'Online';
+        document.getElementById('server-status').className = 'card-badge';
+
+        // Get reward stats
+        const rewards = await fetch('/api/rewards/stats').then(r => r.json());
+        document.getElementById('stat-pool').textContent = (rewards.pool || 0).toLocaleString();
+        document.getElementById('stat-distributed').textContent = (rewards.totalDistributed || 0).toLocaleString();
+        document.getElementById('pool-balance').textContent = (rewards.pool || 0).toLocaleString();
+        document.getElementById('total-distributed').textContent = (rewards.totalDistributed || 0).toLocaleString();
+        document.getElementById('pending-rewards').textContent = (rewards.totalPending || 0).toLocaleString();
+
+        // Load config
+        loadConfig();
+      } catch (err) {
+        document.getElementById('server-status').textContent = 'Offline';
+        document.getElementById('server-status').className = 'card-badge error';
+      }
+    }
+
+    async function loadConfig() {
+      try {
+        const config = await fetch('/api/config').then(r => r.json());
+        document.getElementById('token-mint').value = config.tokenMint || '';
+        document.getElementById('creator-wallet').value = config.creatorWallet || '';
+        document.getElementById('contract-address').value = config.contractAddress || '';
+        document.getElementById('vrf-contract').value = config.vrfContract || '';
+        document.getElementById('twitter-url').value = config.twitter || '';
+        document.getElementById('telegram-url').value = config.telegram || '';
+        document.getElementById('discord-url').value = config.discord || '';
+        document.getElementById('pump-url').value = config.pumpUrl || '';
+      } catch (err) {
+        console.error('Failed to load config:', err);
+      }
+    }
+
+    async function saveConfig() {
+      const config = {
+        tokenMint: document.getElementById('token-mint').value,
+        creatorWallet: document.getElementById('creator-wallet').value,
+        contractAddress: document.getElementById('contract-address').value,
+        vrfContract: document.getElementById('vrf-contract').value
+      };
+
+      try {
+        const res = await fetch('/api/admin/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminSecret, config })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showAlert('Configuration saved!', 'success');
+        } else {
+          showAlert(data.error || 'Failed to save', 'error');
+        }
+      } catch (err) {
+        showAlert('Failed to save configuration', 'error');
+      }
+    }
+
+    async function saveLinks() {
+      const config = {
+        twitter: document.getElementById('twitter-url').value,
+        telegram: document.getElementById('telegram-url').value,
+        discord: document.getElementById('discord-url').value,
+        pumpUrl: document.getElementById('pump-url').value
+      };
+
+      try {
+        const res = await fetch('/api/admin/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminSecret, config })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showAlert('Links saved!', 'success');
+        } else {
+          showAlert(data.error || 'Failed to save', 'error');
+        }
+      } catch (err) {
+        showAlert('Failed to save links', 'error');
+      }
+    }
+
+    async function getRooms() {
+      try {
+        const rooms = await fetch('/api/rooms').then(r => r.json());
+        const list = document.getElementById('room-list');
+
+        if (rooms.length === 0) {
+          list.innerHTML = '<li class="room-item"><span style="color: #888;">No active rooms</span></li>';
+          return;
+        }
+
+        list.innerHTML = rooms.map(room => {
+          let stateClass = room.state;
+          if (room.locked) stateClass = 'locked';
+
+          return `
+            <li class="room-item">
+              <div class="room-info">
+                <span class="room-name">${room.id}</span>
+                <span class="room-state ${stateClass}">${room.locked ? 'LOCKED' : room.state.toUpperCase()}</span>
+                <span style="color: #888;">${room.players}/${room.maxPlayers} players</span>
+              </div>
+              <div>
+                <span style="color: #888;">Round ${room.roundNumber}</span>
+              </div>
+            </li>
+          `;
+        }).join('');
+      } catch (err) {
+        showAlert('Failed to load rooms', 'error');
+      }
+    }
+
+    async function addToPool() {
+      const amount = parseInt(document.getElementById('add-pool-amount').value);
+      if (!amount || amount <= 0) {
+        showAlert('Enter a valid amount', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/pool/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminSecret, amount })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showAlert(`Added ${amount} to pool. New total: ${data.newTotal}`, 'success');
+          document.getElementById('add-pool-amount').value = '';
+          refreshStats();
+        } else {
+          showAlert(data.error || 'Failed to add', 'error');
+        }
+      } catch (err) {
+        showAlert('Failed to add to pool', 'error');
+      }
+    }
+
+    // Initial load
+    refreshStats();
+    setInterval(refreshStats, 30000); // Refresh every 30s
+  </script>
+</body>
+</html>

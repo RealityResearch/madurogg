@@ -4,6 +4,7 @@ const Game = require('./game');
 const ROOM_CONFIG = {
   MAX_PLAYERS: 30,           // Max players per room
   ROUND_DURATION: 10 * 60 * 1000,  // 10 minutes in ms
+  JOIN_LOCK_TIME: 5 * 60 * 1000,   // Lock joins after 5 minutes into round
   MIN_PLAYERS_TO_START: 2,   // Minimum players to start countdown
   COUNTDOWN_DURATION: 30 * 1000,   // 30 second countdown before round starts
   INTERMISSION: 15 * 1000,   // 15 seconds between rounds
@@ -37,6 +38,7 @@ class Room {
       players: this.players.size,
       maxPlayers: ROOM_CONFIG.MAX_PLAYERS,
       state: this.state,
+      locked: this.isLocked(),
       timeRemaining: this.getTimeRemaining(),
       prizePool: this.prizePool,
       roundNumber: this.roundNumber
@@ -58,9 +60,21 @@ class Room {
     return this.players.size >= ROOM_CONFIG.MAX_PLAYERS;
   }
 
+  isLocked() {
+    // Lock joins after 5 minutes into the round
+    if (this.state === 'playing' && this.roundStartTime) {
+      const elapsed = Date.now() - this.roundStartTime;
+      return elapsed >= ROOM_CONFIG.JOIN_LOCK_TIME;
+    }
+    return false;
+  }
+
   canJoin() {
-    // Can join if not full and either waiting or in countdown
-    return !this.isFull() && (this.state === 'waiting' || this.state === 'countdown');
+    // Can join if not full, not locked, and either waiting, countdown, or early in round
+    if (this.isFull()) return false;
+    if (this.state === 'ended') return false;
+    if (this.isLocked()) return false;
+    return true;
   }
 
   // Add player to room

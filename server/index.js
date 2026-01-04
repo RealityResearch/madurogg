@@ -32,6 +32,18 @@ const TOKEN_CONFIG = {
   creatorFeeRate: 0.003  // 0.3% on bonding curve
 };
 
+// Site-wide configuration (editable via admin panel)
+const SITE_CONFIG = {
+  tokenMint: TOKEN_CONFIG.mint,
+  creatorWallet: TOKEN_CONFIG.creator,
+  contractAddress: process.env.CONTRACT_ADDRESS || 'DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF',
+  vrfContract: process.env.VRF_CONTRACT || '',
+  twitter: process.env.TWITTER_URL || '',
+  telegram: process.env.TELEGRAM_URL || '',
+  discord: process.env.DISCORD_URL || '',
+  pumpUrl: process.env.PUMP_URL || `https://pump.fun/coin/${TOKEN_CONFIG.mint}`
+};
+
 // Moralis API for Solana token data
 const MORALIS_CONFIG = {
   apiKey: process.env.MORALIS_API_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6Ijk4Yjk2ZDU5LWI5NGEtNDU1Ni1iODZhLTU2N2U3MjI1OGJiNSIsIm9yZ0lkIjoiNDcxNzAwIiwidXNlcklkIjoiNDg1MjQwIiwidHlwZUlkIjoiNzQxNmFmMjctNGUwYi00MmUwLWE1ZDQtNmUyNzUzMWIxYWE3IiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NTg0MDY4OTYsImV4cCI6NDkxNDE2Njg5Nn0.2RlOOP4xlGCy0GwQkb7FJIVCP1fhxxFVKiLT4g18Jd4',
@@ -295,6 +307,11 @@ app.get('/api/rooms', (req, res) => {
   res.json(roomManager.getRoomList());
 });
 
+// Get site configuration (public - for How It Works page, etc.)
+app.get('/api/config', (req, res) => {
+  res.json(SITE_CONFIG);
+});
+
 // ============ ADMIN ENDPOINTS ============
 
 // Admin: Add to reward pool
@@ -360,6 +377,28 @@ app.post('/api/admin/configure', (req, res) => {
   }
 
   res.json(result);
+});
+
+// Admin: Update site configuration
+app.post('/api/admin/config', (req, res) => {
+  const { adminSecret, config } = req.body;
+
+  if (!rewards.validateAdmin(adminSecret)) {
+    return res.status(403).json({ error: 'Invalid admin secret' });
+  }
+
+  // Update allowed fields
+  if (config.tokenMint) SITE_CONFIG.tokenMint = config.tokenMint;
+  if (config.creatorWallet) SITE_CONFIG.creatorWallet = config.creatorWallet;
+  if (config.contractAddress) SITE_CONFIG.contractAddress = config.contractAddress;
+  if (config.vrfContract !== undefined) SITE_CONFIG.vrfContract = config.vrfContract;
+  if (config.twitter !== undefined) SITE_CONFIG.twitter = config.twitter;
+  if (config.telegram !== undefined) SITE_CONFIG.telegram = config.telegram;
+  if (config.discord !== undefined) SITE_CONFIG.discord = config.discord;
+  if (config.pumpUrl !== undefined) SITE_CONFIG.pumpUrl = config.pumpUrl;
+
+  console.log('[ADMIN] Site config updated:', SITE_CONFIG);
+  res.json({ success: true, config: SITE_CONFIG });
 });
 
 // Admin: Set reward percentages

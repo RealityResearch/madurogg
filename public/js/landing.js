@@ -43,6 +43,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Load site config for footer links
+  async function loadSiteConfig() {
+    try {
+      const config = await fetch('/api/config').then(r => r.json());
+
+      // Update footer links
+      const twitterLink = document.getElementById('footer-twitter');
+      const telegramLink = document.getElementById('footer-telegram');
+
+      if (config.twitter) {
+        twitterLink.href = config.twitter;
+      }
+      if (config.telegram) {
+        telegramLink.href = config.telegram;
+      }
+
+      // Update pump.fun link if token mint changed
+      const pumpLink = document.querySelector('a[href*="pump.fun"]');
+      if (pumpLink && config.pumpUrl) {
+        pumpLink.href = config.pumpUrl;
+      }
+
+      // Update token link on the page
+      const tokenLink = document.querySelector('.token-link');
+      if (tokenLink && config.pumpUrl) {
+        tokenLink.href = config.pumpUrl;
+      }
+
+    } catch (e) {
+      console.error('Failed to load site config');
+    }
+  }
+
+  loadSiteConfig();
+
   function formatNum(n) {
     if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
     if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
