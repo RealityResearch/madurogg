@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="skinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD4A3"/>
+      <stop offset="100%" style="stop-color:#F4A460"/>
+    </linearGradient>
+    <linearGradient id="hairGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700"/>
+      <stop offset="100%" style="stop-color:#DAA520"/>
+    </linearGradient>
+  </defs>
+  <!-- Face circle -->
+  <circle cx="50" cy="50" r="45" fill="url(#skinGrad)"/>
+  <!-- Hair -->
+  <ellipse cx="50" cy="25" rx="40" ry="20" fill="url(#hairGrad)"/>
+  <ellipse cx="30" cy="30" rx="15" ry="12" fill="url(#hairGrad)"/>
+  <ellipse cx="70" cy="30" rx="15" ry="12" fill="url(#hairGrad)"/>
+  <!-- Eyes -->
+  <ellipse cx="35" cy="45" rx="8" ry="5" fill="white"/>
+  <ellipse cx="65" cy="45" rx="8" ry="5" fill="white"/>
+  <circle cx="35" cy="45" r="3" fill="#3498db"/>
+  <circle cx="65" cy="45" r="3" fill="#3498db"/>
+  <!-- Eyebrows -->
+  <path d="M25 38 Q35 32 45 38" stroke="#DAA520" stroke-width="3" fill="none"/>
+  <path d="M55 38 Q65 32 75 38" stroke="#DAA520" stroke-width="3" fill="none"/>
+  <!-- Nose -->
+  <ellipse cx="50" cy="55" rx="5" ry="8" fill="#F4A460"/>
+  <!-- Mouth -->
+  <path d="M35 70 Q50 78 65 70" stroke="#c0392b" stroke-width="3" fill="none"/>
+  <!-- USA Flag Pin -->
+  <rect x="70" y="75" width="15" height="10" fill="#3C3B6E"/>
+  <rect x="70" y="75" width="15" height="2" fill="white"/>
+  <rect x="70" y="79" width="15" height="2" fill="#B22234"/>
+  <rect x="70" y="83" width="15" height="2" fill="white"/>
+</svg>

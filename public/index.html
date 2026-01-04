@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRUMPWORM.IO - Trump vs Maduro Solana Game</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="landing-container">
+    <!-- Animated background -->
+    <div class="bg-animation">
+      <div class="worm worm-1"></div>
+      <div class="worm worm-2"></div>
+      <div class="worm worm-3"></div>
+    </div>
+
+    <!-- Main content -->
+    <div class="content">
+      <h1 class="title">
+        <span class="trump-text">TRUMP</span><span class="worm-text">WORM</span><span class="io-text">.IO</span>
+      </h1>
+
+      <p class="tagline">Be Trump. Eat Maduro. Earn $TRUMPWORM.</p>
+
+      <div class="game-preview">
+        <div class="preview-text">YOU SEE YOURSELF AS</div>
+        <div class="versus">
+          <div class="character trump-side">
+            <div class="character-circle trump-circle">🇺🇸</div>
+            <div class="character-label">TRUMP</div>
+          </div>
+          <div class="vs-text">VS</div>
+          <div class="character maduro-side">
+            <div class="character-circle maduro-circle">🇻🇪</div>
+            <div class="character-label">MADURO</div>
+          </div>
+        </div>
+        <div class="preview-text small">But they also see themselves as Trump! 🤯</div>
+      </div>
+
+      <div class="join-form">
+        <input type="text" id="username" placeholder="Enter your name" maxlength="15" autocomplete="off">
+
+        <div class="wallet-section">
+          <button id="connect-wallet" class="wallet-btn">
+            <span class="wallet-icon">👻</span>
+            Connect Phantom Wallet
+          </button>
+          <div id="wallet-status" class="wallet-status"></div>
+        </div>
+
+        <button id="play-btn" class="play-btn">
+          <span class="play-text">PLAY NOW</span>
+          <span class="play-icon">🐛</span>
+        </button>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-value" id="player-count">0</span>
+          <span class="stat-label">Players Online</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="total-distributed">0 SOL</span>
+          <span class="stat-label">Rewards Distributed</span>
+        </div>
+      </div>
+
+      <div class="token-info">
+        <a href="https://pump.fun" target="_blank" class="pump-link">
+          Buy $TRUMPWORM on pump.fun 🚀
+        </a>
+      </div>
+
+      <div class="how-to-play">
+        <h3>How to Play</h3>
+        <ul>
+          <li><span class="key">Mouse</span> Move your worm</li>
+          <li><span class="key">Space</span> Split to attack</li>
+          <li><span class="key">W</span> Eject mass</li>
+        </ul>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p>$TRUMPWORM - A Solana Memecoin Game</p>
+      <div class="socials">
+        <a href="#" target="_blank">Twitter</a>
+        <a href="#" target="_blank">Discord</a>
+        <a href="#" target="_blank">Telegram</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/js/wallet.js"></script>
+  <script src="/js/landing.js"></script>
+</body>
+</html>

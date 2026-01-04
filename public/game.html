@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRUMPWORM.IO - Playing</title>
+  <link rel="stylesheet" href="/css/game.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Game Canvas -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- HUD Overlay -->
+  <div id="hud">
+    <!-- Score -->
+    <div class="hud-score">
+      <span id="score">0</span>
+      <span class="score-label">SCORE</span>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="hud-leaderboard">
+      <h3>🏆 LEADERBOARD</h3>
+      <ol id="leaderboard-list"></ol>
+    </div>
+
+    <!-- Minimap -->
+    <div class="hud-minimap">
+      <canvas id="minimap" width="150" height="150"></canvas>
+    </div>
+
+    <!-- Controls hint -->
+    <div class="hud-controls">
+      <span><kbd>SPACE</kbd> Split</span>
+      <span><kbd>W</kbd> Eject</span>
+    </div>
+
+    <!-- Wallet info -->
+    <div class="hud-wallet" id="wallet-display"></div>
+
+    <!-- Next reward countdown -->
+    <div class="hud-reward">
+      <span class="reward-label">Next Reward In</span>
+      <span id="reward-countdown">59:59</span>
+    </div>
+  </div>
+
+  <!-- Death screen -->
+  <div id="death-screen" class="hidden">
+    <div class="death-content">
+      <h2>💀 EATEN!</h2>
+      <p>You were consumed by <span id="killer-name">someone</span></p>
+      <div class="death-stats">
+        <div class="death-stat">
+          <span class="death-value" id="final-score">0</span>
+          <span class="death-label">Final Score</span>
+        </div>
+        <div class="death-stat">
+          <span class="death-value" id="final-kills">0</span>
+          <span class="death-label">Kills</span>
+        </div>
+      </div>
+      <button id="respawn-btn" class="respawn-btn">PLAY AGAIN</button>
+    </div>
+  </div>
+
+  <!-- Loading screen -->
+  <div id="loading-screen">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <p>Connecting to server...</p>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/network.js"></script>
+  <script src="/js/input.js"></script>
+  <script src="/js/render.js"></script>
+  <script src="/js/game.js"></script>
+</body>
+</html>
