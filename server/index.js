@@ -377,6 +377,7 @@ app.get('/api/distributions', (req, res) => {
 app.get('/api/transparency', async (req, res) => {
   const solanaStatus = arena.solanaDistributor.getStatus();
   const distributions = arena.getDistributionHistory();
+  const balance = await arena.solanaDistributor.getWalletBalance();
 
   // Calculate total from distribution history
   const totalFromHistory = distributions.reduce((sum, d) => {
@@ -387,6 +388,7 @@ app.get('/api/transparency', async (req, res) => {
     prizeWallet: solanaStatus.prizeWallet,
     network: solanaStatus.network,
     stats: {
+      balance,
       totalDistributed: solanaStatus.stats.totalDistributed || totalFromHistory,
       distributionCount: solanaStatus.stats.distributionCount || distributions.length,
       maxPrizePerRound: solanaStatus.maxPrizePerRound
