@@ -626,14 +626,14 @@ class Game {
   startTimerLoop() {
     setInterval(() => {
       // Update next reward time from state if available
-      if (this.state && this.state.timeUntilReward !== undefined) {
+      if (this.state && typeof this.state.timeUntilReward === 'number' && !isNaN(this.state.timeUntilReward)) {
         this.nextRewardTime = Date.now() + this.state.timeUntilReward;
       }
 
-      const timeUntilReward = Math.max(0, this.nextRewardTime - Date.now());
+      const timeUntilReward = Math.max(0, (this.nextRewardTime || Date.now() + 600000) - Date.now());
       const minutes = Math.floor(timeUntilReward / 60000);
       const seconds = Math.floor((timeUntilReward % 60000) / 1000);
-      const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      const timeStr = isNaN(minutes) || isNaN(seconds) ? '10:00' : `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
       const timerEl = document.getElementById('arena-timer');
       const timerLabel = document.querySelector('.arena-stat.timer .label');
