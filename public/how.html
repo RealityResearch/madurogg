@@ -387,10 +387,6 @@
           <a href="https://solscan.io/account/DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF?cluster=devnet" target="_blank" class="code-link">View on Solscan →</a>
         </div>
 
-        <div class="contract-placeholder" id="vrf-contract-section">
-          <p><strong>VRF Contract:</strong> <a href="#" id="vrf-contract-link" class="code-link">Coming soon - Randomness verification</a></p>
-        </div>
-
         <div class="feature-grid">
           <div class="feature-card">
             <h4>Prize Pool PDA</h4>
@@ -489,10 +485,6 @@ Tick Rate:  60 Hz (Server Authoritative)</pre>
         }
         if (config.contractAddress) {
           document.getElementById('contract-address').textContent = config.contractAddress;
-        }
-        if (config.vrfContract) {
-          document.getElementById('vrf-contract-link').href = config.vrfContract;
-          document.getElementById('vrf-contract-link').textContent = config.vrfContract;
         }
         if (config.twitter) {
           document.getElementById('twitter-link').href = config.twitter;

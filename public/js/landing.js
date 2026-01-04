@@ -5,15 +5,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const playBtn = document.getElementById('play-btn');
   const usernameInput = document.getElementById('username');
   const playerCount = document.getElementById('player-count');
-  const marketCapEl = document.getElementById('market-cap');
-  const rewardPoolEl = document.getElementById('reward-pool');
-  const nextDistEl = document.getElementById('next-dist');
+  const totalFeesEl = document.getElementById('total-fees');
+  const fees24hEl = document.getElementById('fees-24h');
+  const trades24hEl = document.getElementById('trades-24h');
+  const holdersEl = document.getElementById('holders');
+  const solPriceEl = document.getElementById('sol-price');
 
   // Socket connection
   const socket = io();
 
   socket.on('connect', () => {
-    fetchTokenData();
+    fetchPumpStats();
   });
 
   socket.on('playerCount', (count) => {
@@ -22,25 +24,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setInterval(() => socket.emit('getPlayerCount'), 5000);
 
-  // Fetch token/reward data
-  async function fetchTokenData() {
+  // Fetch pump.fun stats
+  async function fetchPumpStats() {
     try {
-      const res = await fetch('/api/token');
+      const res = await fetch('/api/pump');
       const data = await res.json();
 
-      if (data.marketCap && data.marketCap > 0) {
-        marketCapEl.textContent = '$' + formatNum(data.marketCap);
-      } else if (data.marketCapSol && data.marketCapSol > 0) {
-        marketCapEl.textContent = formatNum(data.marketCapSol) + ' SOL';
+      if (data.error) {
+        console.error('Pump API error:', data.error);
+        return;
       }
 
-      if (data.rewardPool && data.rewardPool > 0) {
-        rewardPoolEl.textContent = formatNum(data.rewardPool) + ' tokens';
+      // Total fees
+      if (data.balanceSOL !== undefined) {
+        totalFeesEl.textContent = formatSOL(data.balanceSOL) + ' SOL';
+        if (data.balanceUSD) {
+          totalFeesEl.title = '$' + formatNum(data.balanceUSD);
+        }
+      }
+
+      // 24h fees
+      if (data.fees24hSOL !== undefined) {
+        fees24hEl.textContent = formatSOL(data.fees24hSOL) + ' SOL';
+        if (data.fees24hUSD) {
+          fees24hEl.title = '$' + formatNum(data.fees24hUSD);
+        }
+      }
+
+      // 24h trades
+      if (data.trades24h !== undefined) {
+        trades24hEl.textContent = formatNum(data.trades24h);
+      }
+
+      // Holders
+      if (data.holders !== undefined) {
+        holdersEl.textContent = formatNum(data.holders);
+      }
+
+      // SOL price
+      if (data.solPriceUSD !== undefined) {
+        solPriceEl.textContent = '$' + data.solPriceUSD.toFixed(2);
       }
 
     } catch (e) {
-      console.error('Failed to fetch token data');
+      console.error('Failed to fetch pump stats:', e);
     }
+  }
+
+  function formatSOL(n) {
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    if (n >= 1) return n.toFixed(2);
+    return n.toFixed(4);
   }
 
   // Load site config for footer links
@@ -84,15 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
     return n.toFixed(2);
   }
 
-  // Countdown timer (time until next hour)
-  setInterval(() => {
-    const now = new Date();
-    const mins = 59 - now.getMinutes();
-    const secs = 59 - now.getSeconds();
-    nextDistEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }, 1000);
-
-  setInterval(fetchTokenData, 30000);
+  // Refresh pump stats every 30 seconds
+  setInterval(fetchPumpStats, 30000);
 
   // Wallet
   connectWalletBtn.addEventListener('click', async () => {

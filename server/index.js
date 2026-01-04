@@ -5,6 +5,7 @@ const path = require('path');
 const Game = require('./game');
 const { RoomManager } = require('./room');
 const RewardManager = require('./rewards');
+const { PumpAPI } = require('./pump');
 
 const app = express();
 const server = http.createServer(app);
@@ -49,6 +50,14 @@ const MORALIS_CONFIG = {
   apiKey: process.env.MORALIS_API_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6Ijk4Yjk2ZDU5LWI5NGEtNDU1Ni1iODZhLTU2N2U3MjI1OGJiNSIsIm9yZ0lkIjoiNDcxNzAwIiwidXNlcklkIjoiNDg1MjQwIiwidHlwZUlkIjoiNzQxNmFmMjctNGUwYi00MmUwLWE1ZDQtNmUyNzUzMWIxYWE3IiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NTg0MDY4OTYsImV4cCI6NDkxNDE2Njg5Nn0.2RlOOP4xlGCy0GwQkb7FJIVCP1fhxxFVKiLT4g18Jd4',
   baseUrl: 'https://solana-gateway.moralis.io'
 };
+
+// Pump.fun API for creator fee tracking
+const pumpAPI = new PumpAPI({
+  creator: TOKEN_CONFIG.creator,
+  mint: TOKEN_CONFIG.mint,
+  interval: process.env.PUMP_INTERVAL || '30m',
+  limit: parseInt(process.env.PUMP_LIMIT || '336')
+});
 
 // Fetch token price from Moralis
 async function getTokenPrice(tokenAddress) {
@@ -228,6 +237,27 @@ app.get('/api/token', async (req, res) => {
 // Get reward stats
 app.get('/api/rewards/stats', (req, res) => {
   res.json(rewards.getStats());
+});
+
+// Get pump.fun fee stats (creator fees, 24h volume, holders)
+app.get('/api/pump', async (req, res) => {
+  try {
+    const stats = await pumpAPI.getStats();
+
+    if (stats.error) {
+      return res.status(502).json({ error: stats.error });
+    }
+
+    // Add reward pool info
+    const rewardStats = rewards.getStats();
+    stats.rewardPool = rewardStats.pool;
+    stats.totalDistributed = rewardStats.totalDistributed;
+
+    res.json(stats);
+  } catch (error) {
+    console.error('[/api/pump] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Get rewards for a wallet
