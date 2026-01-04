@@ -9,7 +9,7 @@ async function main() {
   anchor.setProvider(provider);
   
   const idl = require("./target/idl/trumpworm.json");
-  const programId = new PublicKey("DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF");
+  const programId = new PublicKey("Hqp3bwuxLTJGjsacPzo7Q2bpW9snYyDzxQXq1gY1e9EK");
   const program = new Program(idl, programId, provider);
   
   console.log("Program ID:", programId.toString());

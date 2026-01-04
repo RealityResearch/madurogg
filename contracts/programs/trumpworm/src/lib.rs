@@ -1,7 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-declare_id!("DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF");
+// Devnet: Hqp3bwuxLTJGjsacPzo7Q2bpW9snYyDzxQXq1gY1e9EK
+// Mainnet: DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF
+declare_id!("Hqp3bwuxLTJGjsacPzo7Q2bpW9snYyDzxQXq1gY1e9EK");
 
 /// MADURO.GG - Trustless Prize Pool Escrow
 ///
@@ -83,7 +85,7 @@ pub mod trumpworm {
             let cpi_accounts = Transfer {
                 from: ctx.accounts.treasury.to_account_info(),
                 to: recipient.to_account_info(),
-                authority: ctx.accounts.treasury.to_account_info(),
+                authority: ctx.accounts.prize_pool.to_account_info(),
             };
             let cpi_ctx = CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
@@ -129,7 +131,7 @@ pub mod trumpworm {
         let cpi_accounts = Transfer {
             from: ctx.accounts.treasury.to_account_info(),
             to: ctx.accounts.destination.to_account_info(),
-            authority: ctx.accounts.treasury.to_account_info(),
+            authority: ctx.accounts.prize_pool.to_account_info(),
         };
         let cpi_ctx = CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
@@ -176,7 +178,7 @@ pub struct Initialize<'info> {
         seeds = [b"treasury", token_mint.key().as_ref()],
         bump,
         token::mint = token_mint,
-        token::authority = treasury,
+        token::authority = prize_pool,
     )]
     pub treasury: Account<'info, TokenAccount>,
 

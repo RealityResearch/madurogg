@@ -5,6 +5,9 @@ anchor_version = "0.31.1"
 resolution = true
 skip-lint = false
 
+[programs.localnet]
+trumpworm = "Hqp3bwuxLTJGjsacPzo7Q2bpW9snYyDzxQXq1gY1e9EK"
+
 [programs.devnet]
 trumpworm = "Hqp3bwuxLTJGjsacPzo7Q2bpW9snYyDzxQXq1gY1e9EK"
 
@@ -15,7 +18,7 @@ trumpworm = "DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
