@@ -16,18 +16,23 @@
 ## Current Deployment Status
 
 ### Live URLs
-- **Production:** https://maduro.gg (DNS propagating from GoDaddy → Cloudflare)
+- **Production:** https://maduro.gg
 - **Railway Direct:** https://madurogg-production.up.railway.app
+- **Solscan (Devnet):** https://solscan.io/account/DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF?cluster=devnet
 
 ### GitHub
 - **Repo:** https://github.com/RealityResearch/madurogg
 - **Branch:** main
 
+### Smart Contract
+- **Program ID:** `DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF`
+- **Status:** Deployed to Devnet, all 9 tests passing
+- **Upgrade Authority:** `CZnN9UTJGN4g6GjnQD3RG7cE3hNdMQidXMbE8ZzJs9pm`
+
 ### Infrastructure
-- **Hosting:** Railway (auto-detected port 8080)
-- **DNS:** Cloudflare (CNAME flattening for root domain)
-- **Domain Registrar:** GoDaddy (nameservers pointed to Cloudflare)
-- **Cloudflare NS:** faye.ns.cloudflare.com, ricardo.ns.cloudflare.com
+- **Hosting:** Railway (port 8080)
+- **DNS:** Cloudflare (CNAME flattening)
+- **Domain Registrar:** GoDaddy → Cloudflare NS
 - **Railway CNAME:** 5c6b7hf6.up.railway.app
 
 ### Environment Variables (Railway)
@@ -36,99 +41,76 @@
 - `ADMIN_SECRET` - Secret for admin API endpoints (configured)
 
 ### What's Working
-- Railway deployment with WebSocket support
-- Pump.fun API integration for live creator fee tracking
-- Landing page with Trump/Maduro imagery + live pump stats
-- Multiplayer gameplay (eat, split, eject)
-- Battle royale mode with 10-min rounds
-- Leaderboard with room-based scoring
-- Mobile controls (joystick + buttons)
-- Admin API with secret authentication
+- [x] maduro.gg live with SSL
+- [x] Railway deployment with WebSocket support
+- [x] Pump.fun API integration for live creator fee tracking
+- [x] Landing page with pump stats (fees, trades, holders)
+- [x] Leaderboard page with pump stats
+- [x] Multiplayer gameplay (eat, split, eject)
+- [x] Battle royale mode with 10-min rounds
+- [x] Mobile controls (joystick + buttons)
+- [x] Admin API with secret authentication
+- [x] Anchor contract deployed to devnet
+- [x] All 9 contract tests passing (initialize, deposit, distribute, withdraw, transfer authority)
 
-### Pending
-- [x] DNS propagation (GoDaddy → Cloudflare nameservers)
-- [x] Verify maduro.gg resolves to Railway
-- [ ] Test Anchor contract on devnet
-- [ ] Deploy Anchor contract to mainnet
-
-### Next Steps
-1. Test Anchor escrow contract on devnet
-2. Deploy contract to mainnet
-3. Launch real token on pump.fun
-4. Update config with real token address
+### Remaining TODOs
+- [ ] Launch real $MADURO token on pump.fun
+- [ ] Initialize prize pool on devnet with test token
+- [ ] Test full reward distribution flow on devnet
+- [ ] Deploy contract to mainnet
+- [ ] Initialize mainnet prize pool
+- [ ] Update Railway env vars with real token
+- [ ] Verify pump stats show real token data
 
 ---
 
-## Anchor Contract Testing (Devnet)
+## Anchor Contract (Deployed to Devnet)
 
 ### Contract Location
 `contracts/programs/trumpworm/src/lib.rs`
 
-### Program ID (Devnet)
-`Hqp3bwuxLTJGjsacPzo7Q2bpW9snYyDzxQXq1gY1e9EK`
+### Program ID
+`DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF` (same for devnet & mainnet)
 
-### Test Scenarios
+### Test Results (All Passing)
+| Test | Status |
+|------|--------|
+| Initialize prize pool | ✅ |
+| Deposit tokens | ✅ |
+| Reject zero deposit | ✅ |
+| Distribute rewards to players | ✅ |
+| Reject unauthorized distribution | ✅ |
+| Reject >10 recipients | ✅ |
+| Withdraw (authority only) | ✅ |
+| Reject unauthorized withdraw | ✅ |
+| Transfer authority | ✅ |
 
-#### 1. Initialize Treasury
+### Key Functions
+- `initialize` - Create prize pool PDA and treasury
+- `deposit` - Anyone can deposit tokens to prize pool
+- `distribute_rewards` - Authority distributes to top 10 wallets
+- `withdraw` - Emergency withdrawal (authority only)
+- `transfer_authority` - Transfer admin rights
+
+### Run Tests Locally
 ```bash
-# Create game treasury PDA
-anchor test --skip-local-validator
-# Or manually:
-solana program invoke ... initialize
+cd contracts
+anchor test  # Uses local validator
 ```
-**Expected:** Treasury PDA created, admin set
 
-#### 2. Register Player
+### Deploy to Mainnet
 ```bash
-# Register a test wallet as player
-```
-**Expected:** Player account created with 0 stats
-
-#### 3. Update Player Stats
-```bash
-# Server updates player score/kills after game
-```
-**Expected:** Player stats updated, only admin can call
-
-#### 4. Distribute Rewards
-```bash
-# Distribute from treasury to top 10 wallets
-```
-**Expected:** Tokens transferred to winners, event emitted
-
-#### 5. Admin Withdraw
-```bash
-# Emergency withdraw from treasury
-```
-**Expected:** Only admin can withdraw, tokens sent to admin wallet
-
-### Test Wallets (Devnet)
-- Admin: `<your-devnet-wallet>`
-- Player 1: `<test-wallet-1>`
-- Player 2: `<test-wallet-2>`
-
-### Devnet Commands
-```bash
-# Set cluster to devnet
-solana config set --url devnet
-
-# Airdrop SOL for testing
-solana airdrop 2
-
-# Deploy contract
-anchor deploy --provider.cluster devnet
-
-# Run tests
-anchor test --provider.cluster devnet
+solana config set --url mainnet-beta
+anchor deploy --provider.cluster mainnet
 ```
 
 ### Mainnet Deployment Checklist
-- [ ] All devnet tests pass
-- [ ] Treasury initialized correctly
-- [ ] Reward distribution works
-- [ ] Admin functions secured
-- [ ] Program verified on Solscan
-- [ ] Update CLAUDE.md with mainnet program ID
+- [x] All devnet tests pass
+- [x] Contract deployed to devnet
+- [ ] Initialize prize pool with real token
+- [ ] Test deposit/distribute on devnet
+- [ ] Deploy to mainnet
+- [ ] Initialize mainnet prize pool
 
 ---
 
@@ -185,29 +167,26 @@ git commit --allow-empty -m "trigger redeploy" && git push
 
 ---
 
-## Smart Contract (Anchor)
+## Smart Contract Flow
 
-### Purpose
-Trustless escrow for reward distribution. Players don't have to trust that rewards will be sent manually - the contract handles it transparently on-chain.
+### How Rewards Work
+1. **Treasury PDA** holds prize pool tokens (not personal wallet)
+2. **Deposit**: Anyone can deposit tokens (from creator fees)
+3. **Server** calls `distribute_rewards` with top 10 wallet addresses
+4. **Contract** transfers tokens directly to winners
+5. **All distributions** visible on Solscan
 
-### Contract Location
-`contracts/programs/trumpworm/src/lib.rs`
+### PDAs (Program Derived Addresses)
+```
+prize_pool = [b"prize_pool", token_mint]
+treasury   = [b"treasury", token_mint]
+```
 
-### Program ID (Devnet)
-`Hqp3bwuxLTJGjsacPzo7Q2bpW9snYyDzxQXq1gY1e9EK`
-
-### Key Functions
-- `initialize` - Create game treasury PDA
-- `register_player` - On-chain player registration
-- `update_stats` - Server updates player scores
-- `distribute_rewards` - Send tokens to top 10 wallets
-- `withdraw` - Admin withdrawal from treasury
-
-### How It Works
-1. Treasury PDA holds prize pool tokens (not personal wallet)
-2. Server calls `distribute_rewards` hourly with top 10 addresses
-3. Contract transfers tokens directly to winners
-4. All distributions visible on Solscan
+### Security
+- Only authority can distribute/withdraw
+- Max 10 recipients per distribution
+- Zero amount deposits rejected
+- Authority transfer supported
 
 ---
 
