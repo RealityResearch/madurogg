@@ -1,7 +1,7 @@
 {
-  "name": "trumpworm",
+  "name": "maduro-gg",
   "version": "1.0.0",
-  "description": "Trump vs Maduro .io game - Solana memecoin",
+  "description": "MADURO.GG - Solana memecoin game",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",

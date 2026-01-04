@@ -1,258 +1,184 @@
-# TRUMPWORM.IO - Solana Memecoin Game
+# MADURO.GG - Solana Memecoin Game
 
 ## Project Overview
 
-**TRUMPWORM** is an Agar.io-style browser multiplayer game where players control worm characters that consume each other to grow larger. The unique twist: **you always see yourself as Trump, while all other players appear as Maduro** from your perspective (and vice versa for them). This creates a theatrical "us vs them" dynamic that's perfect for memecoin virality.
+**MADURO.GG** is an Agar.io-style browser multiplayer game where players control cells that consume each other to grow larger. The twist: **you always see yourself as Trump, while all other players appear as Maduro** from your perspective (and vice versa for them). This creates a theatrical "us vs them" dynamic perfect for memecoin virality.
 
 ### Core Concept
-- **Game**: Multiplayer worm/cell eating game (Agar.io mechanics)
-- **Token**: $TRUMPWORM launched on pump.fun
-- **Rewards**: Creator fees distributed to top players automatically
-- **Viral Hook**: Trump vs Maduro imagery creates instant engagement
+- **Game**: Multiplayer cell eating game (Agar.io mechanics)
+- **Token**: $MADURO launched on pump.fun
+- **Domain**: maduro.gg
+- **Rewards**: Creator fees (0.3%) distributed to top players hourly
+- **Viral Hook**: Trump vs Maduro imagery - everyone is the hero of their own story
 
 ---
 
-## Product Requirements Document (PRD)
+## Current Token Configuration
 
-### 1. Game Mechanics (Based on Agar.io Research)
+**Test Token (replace after real launch):**
+- Contract: `CmgJ1PobhUqB7MEa8qDkiG2TUpMTskWj8d9JeZWSpump`
+- Creator: `APiYhkSwfR3nEZWSixtHmMbdL1JxK3R6APHSysemNf7y`
+- Supply: 1,000,000,000 (1 billion - pump.fun standard)
 
-**Core Gameplay:**
-- Players control a circular "worm head" that moves toward cursor position
-- Eating food pellets and smaller players increases your mass/size
-- Larger players move slower but can consume smaller players
-- Players can split (Space) to chase/escape, eject mass (W) to feed allies or bait
+**pump.fun Fee Structure:**
+- Bonding Curve: 0.3% creator fee on all trades
+- Post-graduation: Varies by market cap (see pump.fun docs)
 
-**Controls:**
-- Mouse movement: Guide worm direction
-- Spacebar: Split into two smaller worms (offensive/defensive)
-- W key: Eject mass
+---
 
-**Visual Perspective:**
-- YOUR view: You are Trump head, everyone else is Maduro head
-- THEIR view: They are Trump head, you are Maduro head
-- Creates "everyone is the hero of their own story" dynamic
+## Moralis API Integration
 
-**Game Modes (MVP = FFA only):**
-- FFA (Free-For-All): Classic every-player-for-themselves
+Uses Moralis Solana API for real-time token price data.
 
-### 2. Technical Architecture
+**API Key:** Configured in `MORALIS_CONFIG` in `server/index.js`
+
+**Endpoint Used:**
+```
+GET https://solana-gateway.moralis.io/token/mainnet/{tokenAddress}/price
+Headers: X-API-Key: {apiKey}
+```
+
+**Response includes:**
+- `usdPrice` - Token price in USD
+- `nativePrice` - Token price in SOL
+- `exchangeName` - DEX where price was fetched (Raydium, Pump.fun, etc.)
+
+**Docs:** https://docs.moralis.com/web3-data-api/solana/reference/get-sol-token-price
+
+---
+
+## Game Mechanics (Official Agar.io Rules Implemented)
+
+### Mass System
+- **Score = Peak Mass** achieved during life
+- **Food pellets**: +1 mass each
+- **Eating players**: Gain 100% of their mass
+- **Max mass**: 22,500
+- **Mass decay**: Larger cells lose mass faster (proportional)
+
+### Eating Rules
+- Must be **25% larger (1.25x mass)** to consume another player
+- Smaller cell must be mostly inside larger cell
+
+### Controls
+
+**Desktop:**
+- WASD / Arrow Keys: Move
+- Spacebar: Split
+- E: Eject mass
+
+**Mobile:**
+- Virtual joystick (left side of screen)
+- SPLIT button
+- EJECT button
+
+### Split Mechanics
+- Requires **35+ mass** to split
+- Maximum **16 cells** per player
+- Merge delay scales with mass
+
+### Eject Mechanics
+- Requires **32+ mass** to eject
+- Costs **16 mass**, ejected pellet is **14 mass** (87.5% efficiency)
+- Use to feed viruses or bait enemies
+
+### Virus System
+- Green spikey circles scattered on map
+- Mass **<130**: Can hide inside (no effect)
+- Mass **>150**: Explode into pieces when touching
+- Feed virus **7 times** with ejected mass to spawn new virus
+
+---
+
+## Reward Distribution
+
+### How It Works
+1. **Connect wallet** to be eligible for rewards
+2. Play and climb the leaderboard
+3. Every hour, top 10 players receive share of reward pool
+4. Rewards come from creator fees on $MADURO trades
+
+### Distribution Percentages
+| Rank | Share |
+|------|-------|
+| 1st  | 30%   |
+| 2nd  | 20%   |
+| 3rd  | 15%   |
+| 4th  | 10%   |
+| 5th  | 8%    |
+| 6th  | 6%    |
+| 7th  | 4%    |
+| 8th  | 3%    |
+| 9th  | 2%    |
+| 10th | 2%    |
+
+**Note:** No wallet connected = playing for fun only, no rewards.
+
+---
+
+## Technical Architecture
 
 **Stack:**
 ```
-Backend:
-- Node.js + Express (web server)
-- Socket.IO (real-time WebSocket communication)
-- Authoritative game server (all logic server-side)
-
-Frontend:
-- HTML5 Canvas (game rendering)
-- Vanilla JavaScript (game client)
-- Phantom Wallet integration (Solana connection)
-
-Hosting:
-- Vercel/Railway for backend
-- Static files served via Express
+Backend: Node.js + Express + Socket.IO
+Frontend: HTML5 Canvas + Vanilla JS
+Wallet: Phantom integration
+Hosting: Vercel/Railway
 ```
 
-**Game Loop (Server-Side Authoritative):**
-```javascript
-// Server runs at 60 ticks/second
-// 1. Receive player inputs
-// 2. Update game state (positions, collisions, scores)
-// 3. Broadcast state to all clients
-// 4. Clients render received state
+**Server:** 60 tick rate, authoritative (all logic server-side)
+
+---
+
+## Admin API
+
+**Environment Variables:**
+```
+ADMIN_SECRET=your-secret-key
+TOKEN_MINT=pump-fun-token-address
+CREATOR_WALLET=your-wallet-address
 ```
 
-**Client-Server Communication:**
-```
-Client -> Server: { input: { mouseX, mouseY, split, eject } }
-Server -> Client: { players: [...], food: [...], leaderboard: [...] }
-```
+**Endpoints:**
+- `POST /api/admin/pool/add` - Add to reward pool
+- `GET /api/admin/stats` - Detailed stats
+- `POST /api/admin/distribute` - Force distribution
+- `POST /api/admin/configure` - Update config
 
-### 3. Solana Integration
+---
 
-**Wallet Connection:**
-- Phantom wallet detection via `window.phantom.solana`
-- Connect button in game lobby
-- Display connected wallet address (truncated)
-
-**Token Contract (pump.fun launch):**
-- Token: $TRUMPWORM
-- Supply: Standard pump.fun tokenomics (800M to bonding curve)
-- Creator rewards: 0.05% of all trade fees to creator wallet
-
-**Player Rewards Distribution:**
-- Top 10 players on leaderboard at end of each hour
-- Creator rewards accumulated and distributed proportionally
-- Smart contract handles automatic distribution
-
-### 4. Game Flow
-
-```
-1. LANDING PAGE
-   - Connect Phantom wallet
-   - Enter username
-   - See live player count
-   - "PLAY NOW" button
-
-2. GAME LOBBY
-   - Waiting for connection
-   - Shows wallet address
-   - Leaderboard preview
-
-3. GAMEPLAY
-   - Canvas renders game
-   - Trump (you) vs Maduro (them)
-   - HUD: Score, minimap, leaderboard
-   - Death = respawn with minimum size
-
-4. LEADERBOARD
-   - Real-time top 10
-   - Shows wallet addresses
-   - "Hourly rewards" countdown
-```
-
-### 5. File Structure
+## File Structure
 
 ```
 /
-├── claude.md                 # This file
+├── claude.md               # This file
 ├── package.json
 ├── server/
-│   ├── index.js             # Express + Socket.IO setup
-│   ├── game.js              # Game state management
-│   ├── player.js            # Player class
-│   ├── food.js              # Food pellet class
-│   └── physics.js           # Collision detection
+│   ├── index.js           # Express + Socket.IO
+│   ├── game.js            # Game state + collisions
+│   ├── player.js          # Player class + mechanics
+│   └── rewards.js         # Reward distribution
 ├── public/
-│   ├── index.html           # Landing page
-│   ├── game.html            # Game page
+│   ├── index.html         # Landing page
+│   ├── game.html          # Game page
 │   ├── css/
-│   │   └── style.css
-│   ├── js/
-│   │   ├── main.js          # Entry point
-│   │   ├── game.js          # Client game loop
-│   │   ├── render.js        # Canvas rendering
-│   │   ├── input.js         # Mouse/keyboard handlers
-│   │   ├── network.js       # Socket.IO client
-│   │   └── wallet.js        # Phantom integration
-│   └── assets/
-│       ├── trump.png        # Player (self) sprite
-│       ├── maduro.png       # Other players sprite
-│       └── food.png         # Food pellet sprites
-└── README.md
+│   │   ├── style.css      # Landing styles
+│   │   └── game.css       # Game HUD styles
+│   └── js/
+│       ├── game.js        # Client game loop
+│       ├── render.js      # Canvas rendering
+│       ├── input.js       # Controls
+│       ├── network.js     # Socket.IO client
+│       ├── wallet.js      # Phantom integration
+│       └── landing.js     # Landing page logic
 ```
 
 ---
 
-## Marketing Strategy
+## Development Notes
 
-### pump.fun Launch Plan
-
-**Pre-Launch (1-2 days before):**
-1. Create Twitter/X account @TrumpWormGame
-2. Tease game screenshots with Trump vs Maduro imagery
-3. "Something BIG is coming" cryptic posts
-4. Build Discord community
-
-**Launch Day:**
-1. Deploy token on pump.fun
-2. Game website goes live simultaneously
-3. Website URL is pump.fun bio link
-4. First players get bonus tokens
-
-**Post-Launch:**
-1. Hourly rewards distributions create ongoing engagement
-2. Leaderboard screenshots shared by players
-3. Viral clips of gameplay
-
-### Twitter/X Content Schedule
-
-**Week 1 (Launch Week):**
-
-| Day | Tweet 1 (Morning) | Tweet 2 (Afternoon) | Tweet 3 (Evening) |
-|-----|-------------------|---------------------|-------------------|
-| Day 1 | "Trump vs Maduro. But make it a game. $TRUMPWORM is LIVE 🐛🇺🇸" + gameplay video | "First hour of rewards distributed! Top players earned X SOL" | Leaderboard screenshot + "Who's eating who?" |
-| Day 2 | Player testimonial/clip retweet | "POV: You're Trump eating Maduros. They think they're Trump eating you. 🤯" | Stats: "X players, X SOL distributed" |
-| Day 3 | Meme format with Trump/Maduro | Tutorial clip: "How to DOMINATE $TRUMPWORM" | Community highlight |
-| Day 4 | "Maduro doesn't know he's Maduro 💀" | Partnership/influencer mention | Rewards distribution announcement |
-| Day 5 | Gameplay improvement announcement | User-generated content retweet | Weekend challenge announcement |
-| Day 6 | Challenge results | Behind-the-scenes dev update | Teaser for new feature |
-| Day 7 | Weekly stats recap | Best clips compilation | Week 2 preview |
-
-**Recurring Content Types:**
-1. **Gameplay clips** - 15-30 second viral moments
-2. **Leaderboard updates** - Hourly/daily top players
-3. **Reward distributions** - Transparency posts showing SOL sent
-4. **Memes** - Trump/Maduro political meme formats adapted
-5. **Community highlights** - Retweet best player content
-6. **Dev updates** - New features, improvements
-
-**Hashtags:**
-- #TRUMPWORM
-- #SolanaMeme
-- #PumpFun
-- #CryptoGaming
-- #PlayToEarn
-
----
-
-## Development Phases
-
-### Phase 1: MVP (Current Focus)
-- [x] Project setup
-- [ ] Basic game server (movement, eating, respawn)
-- [ ] Client rendering (Canvas)
-- [ ] Trump/Maduro sprites
-- [ ] Wallet connection
-- [ ] Basic leaderboard
-
-### Phase 2: Polish
-- [ ] Sound effects
-- [ ] Particle effects on eat
-- [ ] Smooth interpolation
-- [ ] Mobile touch controls
-- [ ] Better death/respawn animation
-
-### Phase 3: Tokenomics Integration
-- [ ] Automated reward distribution
-- [ ] On-chain leaderboard snapshots
-- [ ] Token gating (hold X tokens for skins)
-
-### Phase 4: Growth
-- [ ] Teams mode
-- [ ] Custom skins (NFT integration)
-- [ ] Tournament system
-- [ ] Referral rewards
-
----
-
-## Key Research Sources
-
-**Agar.io Mechanics:**
-- [Wikipedia - Agar.io](https://en.wikipedia.org/wiki/Agar.io)
-- [GitHub - Agar.io Clone](https://github.com/Kuzma02/agar.io-with-bots)
-
-**Multiplayer Architecture:**
-- [Victor Zhou - Build an .io Game](https://victorzhou.com/blog/build-an-io-game-part-2/)
-- [Sean Goedecke - Socket.io Game](https://www.seangoedecke.com/socket-io-game/)
-- [ModernWeb - Node.js Multiplayer](https://modernweb.com/building-multiplayer-games-node-js-socket-io/)
-
-**pump.fun:**
-- [Netcoins - pump.fun Guide](https://www.netcoins.com/blog/pump-fun-the-memecoin-launchpad-revolutionizing-solana)
-- [OKX - What is pump.fun](https://www.okx.com/en-us/learn/what-is-pumpfun-complete-guide-to-the-viral-memecoin-launchpad-on-solana)
-
-**Solana Wallet:**
-- [Phantom Docs](https://docs.phantom.com/solana/integrating-phantom)
-- [Figment - Pay-to-Play Gaming](https://learn.figment.io/tutorials/pay-to-play-gaming-on-solana)
-
----
-
-## Notes for Claude
-
-When working on this project:
-1. **Server-side authoritative** - All game logic runs on server to prevent cheating
-2. **60 tick rate** - Server updates at 60Hz for smooth gameplay
-3. **Client prediction** - Client can predict movement for smooth feel, server corrects
-4. **Sprite swap** - The Trump/Maduro swap is purely client-side based on player ID
-5. **Keep it simple** - MVP first, polish later
+1. **Server-side authoritative** - Prevents cheating
+2. **60 tick rate** - Smooth gameplay
+3. **Trump/Maduro swap** - Client-side only based on player ID
+4. **Wallet required for rewards** - Otherwise just playing for fun
+5. **Test with provided token** - Replace contract after real launch

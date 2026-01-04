@@ -7,6 +7,7 @@ class NetworkManager {
     this.onStateUpdate = null;
     this.onLeaderboardUpdate = null;
     this.onJoined = null;
+    this.onKill = null;
   }
 
   connect() {
@@ -50,6 +51,13 @@ class NetworkManager {
           this.onJoined(data);
         }
       });
+
+      // Kill events
+      this.socket.on('kill', (data) => {
+        if (this.onKill) {
+          this.onKill(data);
+        }
+      });
     });
   }
 
@@ -59,9 +67,10 @@ class NetworkManager {
     }
   }
 
-  sendInput(mouseX, mouseY) {
+  // Direction-based input (-1 to 1 for x and y)
+  sendInput(dirX, dirY) {
     if (this.socket && this.connected) {
-      this.socket.emit('input', { mouseX, mouseY });
+      this.socket.emit('input', { dirX, dirY });
     }
   }
 

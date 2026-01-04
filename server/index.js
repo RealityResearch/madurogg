@@ -22,10 +22,69 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Game and reward instances
 const game = new Game();
-const rewards = new RewardManager();
 
-// Simulate adding to reward pool (in production, this comes from on-chain creator fees)
-rewards.addToPool(1000000); // Initial pool for testing
+// Token Configuration
+const TOKEN_CONFIG = {
+  mint: process.env.TOKEN_MINT || 'CmgJ1PobhUqB7MEa8qDkiG2TUpMTskWj8d9JeZWSpump',
+  creator: process.env.CREATOR_WALLET || 'APiYhkSwfR3nEZWSixtHmMbdL1JxK3R6APHSysemNf7y',
+  supply: 1_000_000_000, // 1 billion (pump.fun standard)
+  creatorFeeRate: 0.003  // 0.3% on bonding curve
+};
+
+// Moralis API for Solana token data
+const MORALIS_CONFIG = {
+  apiKey: process.env.MORALIS_API_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6Ijk4Yjk2ZDU5LWI5NGEtNDU1Ni1iODZhLTU2N2U3MjI1OGJiNSIsIm9yZ0lkIjoiNDcxNzAwIiwidXNlcklkIjoiNDg1MjQwIiwidHlwZUlkIjoiNzQxNmFmMjctNGUwYi00MmUwLWE1ZDQtNmUyNzUzMWIxYWE3IiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NTg0MDY4OTYsImV4cCI6NDkxNDE2Njg5Nn0.2RlOOP4xlGCy0GwQkb7FJIVCP1fhxxFVKiLT4g18Jd4',
+  baseUrl: 'https://solana-gateway.moralis.io'
+};
+
+// Fetch token price from Moralis
+async function getTokenPrice(tokenAddress) {
+  try {
+    const response = await fetch(
+      `${MORALIS_CONFIG.baseUrl}/token/mainnet/${tokenAddress}/price`,
+      {
+        headers: {
+          'Accept': 'application/json',
+          'X-API-Key': MORALIS_CONFIG.apiKey
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Moralis API error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Moralis price fetch error:', error.message);
+    return null;
+  }
+}
+
+const rewards = new RewardManager({
+  tokenMint: TOKEN_CONFIG.mint,
+  creatorWallet: TOKEN_CONFIG.creator,
+  adminSecret: process.env.ADMIN_SECRET,
+  autoAddFeesToPool: true,
+  tokenSupply: TOKEN_CONFIG.supply,
+  creatorFeeRate: TOKEN_CONFIG.creatorFeeRate
+});
+
+if (!process.env.ADMIN_SECRET) {
+  console.warn('\n⚠️  WARNING: ADMIN_SECRET not set! Admin endpoints will be disabled.');
+  console.warn('   Set it with: ADMIN_SECRET=your-secret-here npm run dev\n');
+}
+
+console.log(`\n📊 Token: ${TOKEN_CONFIG.mint}`);
+console.log(`👛 Creator: ${TOKEN_CONFIG.creator}\n`);
+
+// Add initial test pool if configured
+if (process.env.INITIAL_POOL) {
+  rewards.addToPool(parseInt(process.env.INITIAL_POOL), null, 'initial');
+} else {
+  // Default test pool
+  rewards.addToPool(1000000, null, 'test');
+}
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
@@ -74,6 +133,13 @@ const TICK_RATE = 1000 / 60;
 setInterval(() => {
   game.update();
 
+  // Broadcast kill events
+  const killEvents = game.getKillEvents();
+  for (const kill of killEvents) {
+    io.emit('kill', kill);
+    console.log(`${kill.killer} ate ${kill.victim}!`);
+  }
+
   // Broadcast game state to all players
   const state = game.getState();
   io.emit('state', state);
@@ -90,6 +156,54 @@ setInterval(() => {
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', players: game.players.size });
+});
+
+// Get token info (for frontend) - uses Moralis API
+app.get('/api/token', async (req, res) => {
+  try {
+    // Fetch price from Moralis
+    const priceData = await getTokenPrice(TOKEN_CONFIG.mint);
+    const rewardStats = rewards.getStats();
+
+    if (priceData) {
+      const price = priceData.usdPrice || 0;
+      const marketCap = price * TOKEN_CONFIG.supply;
+
+      res.json({
+        mint: TOKEN_CONFIG.mint,
+        creator: TOKEN_CONFIG.creator,
+        name: priceData.name || 'MADURO',
+        symbol: priceData.symbol || 'MADURO',
+        supply: TOKEN_CONFIG.supply,
+        price: price,
+        priceNative: priceData.nativePrice?.value || 0,
+        marketCap: marketCap,
+        exchange: priceData.exchangeName || 'unknown',
+        // Reward stats
+        rewardPool: rewardStats.pool,
+        totalDistributed: rewardStats.totalDistributed,
+        nextDistribution: rewardStats.timeUntilNext
+      });
+    } else {
+      throw new Error('No price data');
+    }
+  } catch (error) {
+    console.error('Token fetch error:', error.message);
+    const rewardStats = rewards.getStats();
+    res.json({
+      mint: TOKEN_CONFIG.mint,
+      creator: TOKEN_CONFIG.creator,
+      name: 'MADURO',
+      symbol: 'MADURO',
+      supply: TOKEN_CONFIG.supply,
+      marketCap: 0,
+      error: 'Unable to fetch live data',
+      rewardPool: rewardStats.pool,
+      totalDistributed: rewardStats.totalDistributed,
+      creatorFeesTracked: rewardStats.creatorFees?.totalTracked || 0,
+      nextDistribution: rewardStats.timeUntilNext
+    });
+  }
 });
 
 // Get reward stats
@@ -154,6 +268,90 @@ app.get('/api/leaderboard', (req, res) => {
   res.json(game.getLeaderboard());
 });
 
+// ============ ADMIN ENDPOINTS ============
+
+// Admin: Add to reward pool
+app.post('/api/admin/pool/add', (req, res) => {
+  const { amount, adminSecret } = req.body;
+
+  if (!amount || isNaN(amount) || amount <= 0) {
+    return res.status(400).json({ error: 'Invalid amount' });
+  }
+
+  const result = rewards.addToPool(amount, adminSecret, 'admin');
+  if (!result.success) {
+    return res.status(403).json(result);
+  }
+
+  res.json(result);
+});
+
+// Admin: Get detailed stats
+app.get('/api/admin/stats', (req, res) => {
+  const { adminSecret } = req.query;
+  const result = rewards.getAdminStats(adminSecret);
+
+  if (!result.success && result.error) {
+    return res.status(403).json(result);
+  }
+
+  res.json(result);
+});
+
+// Admin: Force reward distribution
+app.post('/api/admin/distribute', (req, res) => {
+  const { adminSecret } = req.body;
+  const leaderboard = game.getLeaderboard();
+  const result = rewards.forceDistribution(leaderboard, adminSecret);
+
+  if (!result) {
+    return res.status(400).json({ error: 'No rewards to distribute or no players' });
+  }
+  if (result.error) {
+    return res.status(403).json(result);
+  }
+
+  // Broadcast to all players
+  io.emit('rewardDistribution', result);
+  res.json(result);
+});
+
+// Admin: Configure reward manager
+app.post('/api/admin/configure', (req, res) => {
+  const { adminSecret, config } = req.body;
+  const result = rewards.configure(config, adminSecret);
+
+  if (!result.success) {
+    return res.status(403).json(result);
+  }
+
+  res.json(result);
+});
+
+// Admin: Set reward percentages
+app.post('/api/admin/percentages', (req, res) => {
+  const { adminSecret, percentages } = req.body;
+  const result = rewards.setRewardPercentages(percentages, adminSecret);
+
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+
+  res.json(result);
+});
+
+// Admin: Record creator fee (webhook from on-chain monitor)
+app.post('/api/admin/fee', (req, res) => {
+  const { amount, txSignature, adminSecret } = req.body;
+
+  if (!rewards.validateAdmin(adminSecret)) {
+    return res.status(403).json({ error: 'Invalid admin secret' });
+  }
+
+  const result = rewards.recordCreatorFee(amount, txSignature);
+  res.json(result);
+});
+
 // ============ REWARD DISTRIBUTION ============
 
 // Hourly reward distribution
@@ -172,12 +370,12 @@ setInterval(() => {
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`
-  ████████╗██████╗ ██╗   ██╗███╗   ███╗██████╗ ██╗    ██╗ ██████╗ ██████╗ ███╗   ███╗
-  ╚══██╔══╝██╔══██╗██║   ██║████╗ ████║██╔══██╗██║    ██║██╔═══██╗██╔══██╗████╗ ████║
-     ██║   ██████╔╝██║   ██║██╔████╔██║██████╔╝██║ █╗ ██║██║   ██║██████╔╝██╔████╔██║
-     ██║   ██╔══██╗██║   ██║██║╚██╔╝██║██╔═══╝ ██║███╗██║██║   ██║██╔══██╗██║╚██╔╝██║
-     ██║   ██║  ██║╚██████╔╝██║ ╚═╝ ██║██║     ╚███╔███╔╝╚██████╔╝██║  ██║██║ ╚═╝ ██║
-     ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═╝      ╚══╝╚══╝  ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝
+  ███╗   ███╗ █████╗ ██████╗ ██╗   ██╗██████╗  ██████╗    ██████╗  ██████╗
+  ████╗ ████║██╔══██╗██╔══██╗██║   ██║██╔══██╗██╔═══██╗   ██╔════╝ ██╔════╝
+  ██╔████╔██║███████║██║  ██║██║   ██║██████╔╝██║   ██║   ██║  ███╗██║  ███╗
+  ██║╚██╔╝██║██╔══██║██║  ██║██║   ██║██╔══██╗██║   ██║   ██║   ██║██║   ██║
+  ██║ ╚═╝ ██║██║  ██║██████╔╝╚██████╔╝██║  ██║╚██████╔╝██╗╚██████╔╝╚██████╔╝
+  ╚═╝     ╚═╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝ ╚═════╝  ╚═════╝
 
   Server running on http://localhost:${PORT}
   `);

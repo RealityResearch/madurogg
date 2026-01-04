@@ -1,91 +1,105 @@
-// Landing Page Logic
+// Landing Page
 document.addEventListener('DOMContentLoaded', () => {
   const connectWalletBtn = document.getElementById('connect-wallet');
   const walletStatus = document.getElementById('wallet-status');
   const playBtn = document.getElementById('play-btn');
   const usernameInput = document.getElementById('username');
   const playerCount = document.getElementById('player-count');
+  const marketCapEl = document.getElementById('market-cap');
+  const rewardPoolEl = document.getElementById('reward-pool');
+  const nextDistEl = document.getElementById('next-dist');
 
-  // Connect to server for player count
+  // Socket connection
   const socket = io();
 
   socket.on('connect', () => {
-    console.log('Connected to server');
+    fetchTokenData();
   });
 
   socket.on('playerCount', (count) => {
     playerCount.textContent = count;
   });
 
-  // Request player count periodically
-  setInterval(() => {
-    socket.emit('getPlayerCount');
-  }, 5000);
+  setInterval(() => socket.emit('getPlayerCount'), 5000);
 
-  // Wallet connection
+  // Fetch token/reward data
+  async function fetchTokenData() {
+    try {
+      const res = await fetch('/api/token');
+      const data = await res.json();
+
+      if (data.marketCap && data.marketCap > 0) {
+        marketCapEl.textContent = '$' + formatNum(data.marketCap);
+      } else if (data.marketCapSol && data.marketCapSol > 0) {
+        marketCapEl.textContent = formatNum(data.marketCapSol) + ' SOL';
+      }
+
+      if (data.rewardPool && data.rewardPool > 0) {
+        rewardPoolEl.textContent = formatNum(data.rewardPool) + ' tokens';
+      }
+
+    } catch (e) {
+      console.error('Failed to fetch token data');
+    }
+  }
+
+  function formatNum(n) {
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return n.toFixed(2);
+  }
+
+  // Countdown timer (time until next hour)
+  setInterval(() => {
+    const now = new Date();
+    const mins = 59 - now.getMinutes();
+    const secs = 59 - now.getSeconds();
+    nextDistEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }, 1000);
+
+  setInterval(fetchTokenData, 30000);
+
+  // Wallet
   connectWalletBtn.addEventListener('click', async () => {
     try {
-      if (window.walletManager.isConnected) {
-        // Disconnect
+      if (window.walletManager?.isConnected) {
         window.walletManager.disconnect();
-        connectWalletBtn.innerHTML = '<span class="wallet-icon">👻</span> Connect Phantom Wallet';
+        connectWalletBtn.querySelector('.btn-text').textContent = 'Connect Wallet';
         connectWalletBtn.classList.remove('connected');
         walletStatus.textContent = '';
         walletStatus.classList.remove('connected');
       } else {
-        // Connect
-        connectWalletBtn.innerHTML = '<span class="wallet-icon">⏳</span> Connecting...';
+        connectWalletBtn.querySelector('.btn-text').textContent = 'Connecting...';
         const address = await window.walletManager.connect();
-        connectWalletBtn.innerHTML = '<span class="wallet-icon">✅</span> ' + window.walletManager.getTruncatedAddress();
+        const short = address.slice(0, 4) + '...' + address.slice(-4);
+        connectWalletBtn.querySelector('.btn-text').textContent = short;
         connectWalletBtn.classList.add('connected');
-        walletStatus.textContent = 'Wallet connected! You\'re eligible for rewards.';
+        walletStatus.textContent = 'Eligible for rewards';
         walletStatus.classList.add('connected');
       }
-    } catch (error) {
-      console.error('Wallet error:', error);
-      connectWalletBtn.innerHTML = '<span class="wallet-icon">👻</span> Connect Phantom Wallet';
-      walletStatus.textContent = error.message || 'Failed to connect wallet';
+    } catch (err) {
+      connectWalletBtn.querySelector('.btn-text').textContent = 'Connect Wallet';
+      walletStatus.textContent = err.message || 'Failed to connect';
       walletStatus.classList.remove('connected');
     }
   });
 
-  // Play button
+  // Play
   playBtn.addEventListener('click', () => {
-    const username = usernameInput.value.trim() || 'Anonymous';
-    const wallet = window.walletManager.publicKey || null;
+    const username = usernameInput.value.trim() || 'ANON';
+    const wallet = window.walletManager?.publicKey || null;
 
-    // Store player data in sessionStorage
     sessionStorage.setItem('playerData', JSON.stringify({
-      username,
+      username: username.toUpperCase(),
       wallet
     }));
 
-    // Navigate to game
     window.location.href = '/game.html';
   });
 
-  // Enter key to play
   usernameInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      playBtn.click();
-    }
+    if (e.key === 'Enter') playBtn.click();
   });
 
-  // Animate player count
-  let targetCount = 0;
-  let currentCount = 0;
-
-  function animateCount() {
-    if (currentCount < targetCount) {
-      currentCount++;
-      playerCount.textContent = currentCount;
-    }
-    requestAnimationFrame(animateCount);
-  }
-
-  // Simulate some players for demo
-  setTimeout(() => {
-    targetCount = Math.floor(Math.random() * 50) + 10;
-    animateCount();
-  }, 1000);
+  socket.emit('getPlayerCount');
 });

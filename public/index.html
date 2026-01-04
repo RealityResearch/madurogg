@@ -3,98 +3,109 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TRUMPWORM.IO - Trump vs Maduro Solana Game</title>
+  <title>MADURO.GG</title>
   <link rel="stylesheet" href="/css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="landing-container">
-    <!-- Animated background -->
-    <div class="bg-animation">
-      <div class="worm worm-1"></div>
-      <div class="worm worm-2"></div>
-      <div class="worm worm-3"></div>
-    </div>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">
+          <span class="logo-text">MADURO</span>
+          <span class="logo-tag">.GG</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          <span id="player-count">0</span> playing now
+        </div>
+      </div>
+    </header>
 
-    <!-- Main content -->
-    <div class="content">
-      <h1 class="title">
-        <span class="trump-text">TRUMP</span><span class="worm-text">WORM</span><span class="io-text">.IO</span>
-      </h1>
+    <!-- Hero Section -->
+    <main class="hero">
+      <div class="hero-side hero-left">
+        <div class="hero-face">
+          <img src="/assets/trump.webp" alt="Trump">
+        </div>
+        <div class="hero-label">
+          <span class="label-big trump-color">TRUMP</span>
+        </div>
+      </div>
 
-      <p class="tagline">Be Trump. Eat Maduro. Earn $TRUMPWORM.</p>
+      <div class="hero-center">
+        <div class="hero-content">
+          <h1 class="title">MADURO.GG</h1>
+          <p class="tagline">Eat. Grow. Dominate. Win SOL.</p>
 
-      <div class="game-preview">
-        <div class="preview-text">YOU SEE YOURSELF AS</div>
-        <div class="versus">
-          <div class="character trump-side">
-            <div class="character-circle trump-circle">🇺🇸</div>
-            <div class="character-label">TRUMP</div>
+          <div class="join-box">
+            <input type="text" id="username" placeholder="Your name" maxlength="15" autocomplete="off">
+
+            <button id="connect-wallet" class="btn btn-secondary">
+              <span class="btn-text">Connect Wallet</span>
+            </button>
+            <div id="wallet-status" class="wallet-status"></div>
+
+            <button id="play-btn" class="btn btn-primary">
+              <span class="btn-text">Play</span>
+            </button>
+
+            <a href="https://pump.fun/coin/CmgJ1PobhUqB7MEa8qDkiG2TUpMTskWj8d9JeZWSpump" target="_blank" class="token-link">
+              Buy $MADURO on pump.fun
+            </a>
           </div>
-          <div class="vs-text">VS</div>
-          <div class="character maduro-side">
-            <div class="character-circle maduro-circle">🇻🇪</div>
-            <div class="character-label">MADURO</div>
+
+          <div class="controls-info">
+            <span><kbd>WASD</kbd> move</span>
+            <span><kbd>SPACE</kbd> split</span>
+            <span><kbd>E</kbd> eject</span>
+          </div>
+
+          <div class="wallet-notice">
+            Connect wallet to earn from the prize pool. No wallet = just for fun.
           </div>
         </div>
-        <div class="preview-text small">But they also see themselves as Trump! 🤯</div>
       </div>
 
-      <div class="join-form">
-        <input type="text" id="username" placeholder="Enter your name" maxlength="15" autocomplete="off">
-
-        <div class="wallet-section">
-          <button id="connect-wallet" class="wallet-btn">
-            <span class="wallet-icon">👻</span>
-            Connect Phantom Wallet
-          </button>
-          <div id="wallet-status" class="wallet-status"></div>
+      <div class="hero-side hero-right">
+        <div class="hero-face">
+          <img src="/assets/maduro.jpeg" alt="Maduro">
         </div>
-
-        <button id="play-btn" class="play-btn">
-          <span class="play-text">PLAY NOW</span>
-          <span class="play-icon">🐛</span>
-        </button>
-      </div>
-
-      <div class="stats">
-        <div class="stat">
-          <span class="stat-value" id="player-count">0</span>
-          <span class="stat-label">Players Online</span>
-        </div>
-        <div class="stat">
-          <span class="stat-value" id="total-distributed">0 SOL</span>
-          <span class="stat-label">Rewards Distributed</span>
+        <div class="hero-label">
+          <span class="label-big maduro-color">MADURO</span>
         </div>
       </div>
+    </main>
 
-      <div class="token-info">
-        <a href="https://pump.fun" target="_blank" class="pump-link">
-          Buy $TRUMPWORM on pump.fun 🚀
-        </a>
-      </div>
-
-      <div class="how-to-play">
-        <h3>How to Play</h3>
-        <ul>
-          <li><span class="key">Mouse</span> Move your worm</li>
-          <li><span class="key">Space</span> Split to attack</li>
-          <li><span class="key">W</span> Eject mass</li>
-        </ul>
-      </div>
-    </div>
-
+    <!-- Footer -->
     <footer class="footer">
-      <p>$TRUMPWORM - A Solana Memecoin Game</p>
-      <div class="socials">
+      <div class="footer-stats">
+        <div class="footer-stat">
+          <span class="footer-stat-label">Market Cap</span>
+          <span class="footer-stat-value" id="market-cap">--</span>
+        </div>
+        <div class="footer-stat">
+          <span class="footer-stat-label">Prize Pool</span>
+          <span class="footer-stat-value" id="reward-pool">--</span>
+        </div>
+        <div class="footer-stat">
+          <span class="footer-stat-label">Next Payout</span>
+          <span class="footer-stat-value" id="next-dist">--:--</span>
+        </div>
+      </div>
+      <div class="footer-links">
         <a href="/stats.html">Leaderboard</a>
-        <a href="#" target="_blank">Twitter</a>
-        <a href="#" target="_blank">Discord</a>
-        <a href="#" target="_blank">Telegram</a>
+        <a href="https://pump.fun/coin/CmgJ1PobhUqB7MEa8qDkiG2TUpMTskWj8d9JeZWSpump" target="_blank">pump.fun</a>
+        <a href="#">Twitter</a>
+        <a href="#">Telegram</a>
       </div>
     </footer>
   </div>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script src="/js/wallet.js"></script>
   <script src="/js/landing.js"></script>
 </body>

@@ -39,27 +39,21 @@ class Renderer {
       }
     };
 
-    // Load Trump image (player self) - Public domain White House official portrait
-    this.trumpImage.crossOrigin = 'anonymous';
+    // Load Trump image (player self)
     this.trumpImage.onload = onLoad;
     this.trumpImage.onerror = () => {
-      console.log('Trump image not found, using local fallback');
-      this.trumpImage.src = '/assets/trump.svg';
+      console.log('Trump image failed to load');
       onLoad();
     };
-    // Official White House portrait - Public Domain
-    this.trumpImage.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Donald_Trump_official_portrait.jpg/220px-Donald_Trump_official_portrait.jpg';
+    this.trumpImage.src = '/assets/trump.webp';
 
-    // Load Maduro image (other players) - Wikimedia Commons
-    this.maduroImage.crossOrigin = 'anonymous';
+    // Load Maduro image (other players)
     this.maduroImage.onload = onLoad;
     this.maduroImage.onerror = () => {
-      console.log('Maduro image not found, using local fallback');
-      this.maduroImage.src = '/assets/maduro.svg';
+      console.log('Maduro image failed to load');
       onLoad();
     };
-    // Wikimedia Commons - Public Domain
-    this.maduroImage.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Nicol%C3%A1s_Maduro_2019.jpg/220px-Nicol%C3%A1s_Maduro_2019.jpg';
+    this.maduroImage.src = '/assets/maduro.jpeg';
   }
 
   resize() {
@@ -87,8 +81,8 @@ class Renderer {
 
   // Clear and prepare canvas
   clear() {
-    // Dark background
-    this.ctx.fillStyle = '#0a0a1a';
+    // Dark background matching landing page (#0a0a0a)
+    this.ctx.fillStyle = '#0a0a0a';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
@@ -137,7 +131,7 @@ class Renderer {
   drawFood(food) {
     for (const f of food) {
       const pos = this.worldToScreen(f.x, f.y);
-      const size = f.size * this.zoom;
+      const size = Math.max(3, f.size * this.zoom);
 
       // Skip if off screen
       if (pos.x < -size || pos.x > this.canvas.width + size ||
@@ -145,24 +139,82 @@ class Renderer {
         continue;
       }
 
-      // Glow effect
-      const gradient = this.ctx.createRadialGradient(
-        pos.x, pos.y, 0,
-        pos.x, pos.y, size * 2
-      );
-      gradient.addColorStop(0, f.color);
-      gradient.addColorStop(1, 'transparent');
-
-      this.ctx.fillStyle = gradient;
-      this.ctx.beginPath();
-      this.ctx.arc(pos.x, pos.y, size * 2, 0, Math.PI * 2);
-      this.ctx.fill();
+      // Ejected mass is larger and has velocity glow
+      if (f.isEjected) {
+        // Glow for ejected mass
+        this.ctx.shadowColor = f.color;
+        this.ctx.shadowBlur = 8;
+      }
 
       // Core
       this.ctx.fillStyle = f.color;
       this.ctx.beginPath();
       this.ctx.arc(pos.x, pos.y, size, 0, Math.PI * 2);
       this.ctx.fill();
+
+      this.ctx.shadowBlur = 0;
+    }
+  }
+
+  // Draw viruses (green spikey circles)
+  drawViruses(viruses) {
+    if (!viruses) return;
+
+    for (const v of viruses) {
+      const pos = this.worldToScreen(v.x, v.y);
+      const size = v.size * this.zoom;
+
+      // Skip if off screen
+      if (pos.x < -size * 2 || pos.x > this.canvas.width + size * 2 ||
+          pos.y < -size * 2 || pos.y > this.canvas.height + size * 2) {
+        continue;
+      }
+
+      // Draw spiky virus
+      this.ctx.save();
+
+      // Glow effect
+      this.ctx.shadowColor = '#33ff33';
+      this.ctx.shadowBlur = 15;
+
+      // Draw spikey circle
+      const spikes = 11;
+      const outerRadius = size;
+      const innerRadius = size * 0.7;
+
+      this.ctx.beginPath();
+      for (let i = 0; i < spikes * 2; i++) {
+        const angle = (i * Math.PI) / spikes - Math.PI / 2;
+        const radius = i % 2 === 0 ? outerRadius : innerRadius;
+        const x = pos.x + Math.cos(angle) * radius;
+        const y = pos.y + Math.sin(angle) * radius;
+
+        if (i === 0) {
+          this.ctx.moveTo(x, y);
+        } else {
+          this.ctx.lineTo(x, y);
+        }
+      }
+      this.ctx.closePath();
+
+      // Fill with gradient
+      const gradient = this.ctx.createRadialGradient(
+        pos.x, pos.y, 0,
+        pos.x, pos.y, size
+      );
+      gradient.addColorStop(0, 'rgba(100, 255, 100, 0.9)');
+      gradient.addColorStop(0.7, 'rgba(50, 200, 50, 0.8)');
+      gradient.addColorStop(1, 'rgba(30, 150, 30, 0.7)');
+
+      this.ctx.fillStyle = gradient;
+      this.ctx.fill();
+
+      // Border
+      this.ctx.strokeStyle = '#33aa33';
+      this.ctx.lineWidth = 2;
+      this.ctx.stroke();
+
+      this.ctx.restore();
     }
   }
 
@@ -177,8 +229,8 @@ class Renderer {
       return;
     }
 
-    // Glow effect
-    this.ctx.shadowColor = isSelf ? '#4ecdc4' : '#ff6b6b';
+    // Glow effect - matching theme colors
+    this.ctx.shadowColor = isSelf ? '#00ff88' : '#ff6b35';
     this.ctx.shadowBlur = 20;
 
     // Draw circle background
@@ -214,19 +266,19 @@ class Renderer {
       this.ctx.fillText(isSelf ? '🇺🇸' : '🇻🇪', pos.x, pos.y);
     }
 
-    // Draw border ring
+    // Draw border ring - matching theme colors
     this.ctx.beginPath();
     this.ctx.arc(pos.x, pos.y, size, 0, Math.PI * 2);
-    this.ctx.strokeStyle = isSelf ? '#4ecdc4' : '#f39c12';
+    this.ctx.strokeStyle = isSelf ? '#00ff88' : '#ff6b35';
     this.ctx.lineWidth = 3;
     this.ctx.stroke();
 
     this.ctx.shadowBlur = 0;
 
-    // Draw username
+    // Draw username below cell (mass/score already shown in HUD)
     if (size > 20) {
       this.ctx.fillStyle = '#fff';
-      this.ctx.font = `bold ${Math.max(12, size * 0.3)}px Orbitron`;
+      this.ctx.font = `bold ${Math.max(12, size * 0.3)}px 'Inter', sans-serif`;
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
 
@@ -238,6 +290,28 @@ class Renderer {
     }
   }
 
+  // Draw player trail
+  drawTrail(trail, color, isSelf) {
+    if (!trail || trail.length < 2) return;
+
+    this.ctx.beginPath();
+    const startPos = this.worldToScreen(trail[0].x, trail[0].y);
+    this.ctx.moveTo(startPos.x, startPos.y);
+
+    for (let i = 1; i < trail.length; i++) {
+      const pos = this.worldToScreen(trail[i].x, trail[i].y);
+      this.ctx.lineTo(pos.x, pos.y);
+    }
+
+    // Gradient trail - matching theme colors
+    const alpha = isSelf ? 0.4 : 0.2;
+    this.ctx.strokeStyle = isSelf ? `rgba(0, 255, 136, ${alpha})` : `rgba(255, 107, 53, ${alpha})`;
+    this.ctx.lineWidth = 8 * this.zoom;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    this.ctx.stroke();
+  }
+
   // Draw all players
   drawPlayers(players, selfId) {
     // Sort by size (smaller on top)
@@ -247,6 +321,15 @@ class Renderer {
       return sizeB - sizeA;
     });
 
+    // Draw trails first (behind players)
+    for (const player of sorted) {
+      const isSelf = player.id === selfId;
+      if (player.trail) {
+        this.drawTrail(player.trail, player.color, isSelf);
+      }
+    }
+
+    // Draw players
     for (const player of sorted) {
       const isSelf = player.id === selfId;
 
@@ -256,21 +339,50 @@ class Renderer {
     }
   }
 
+  // Draw particles
+  drawParticles(particles) {
+    for (const p of particles) {
+      const pos = this.worldToScreen(p.x, p.y);
+      const size = p.size * this.zoom * p.life;
+
+      this.ctx.globalAlpha = p.life;
+      this.ctx.fillStyle = p.color;
+      this.ctx.beginPath();
+      this.ctx.arc(pos.x, pos.y, size, 0, Math.PI * 2);
+      this.ctx.fill();
+    }
+    this.ctx.globalAlpha = 1;
+  }
+
   // Draw minimap
-  drawMinimap(players, selfId, minimapCanvas) {
+  drawMinimap(players, selfId, minimapCanvas, viruses) {
     const ctx = minimapCanvas.getContext('2d');
     const w = minimapCanvas.width;
     const h = minimapCanvas.height;
     const scale = w / this.worldSize;
 
-    // Background
-    ctx.fillStyle = 'rgba(10, 10, 26, 0.8)';
+    // Background - matching theme
+    ctx.fillStyle = 'rgba(10, 10, 10, 0.9)';
     ctx.fillRect(0, 0, w, h);
 
     // Border
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
     ctx.lineWidth = 1;
     ctx.strokeRect(0, 0, w, h);
+
+    // Draw viruses on minimap
+    if (viruses) {
+      for (const v of viruses) {
+        const x = v.x * scale;
+        const y = v.y * scale;
+        const size = Math.max(2, v.size * scale * 0.3);
+
+        ctx.fillStyle = '#33ff33';
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
 
     // Draw players
     for (const player of players) {
@@ -281,7 +393,7 @@ class Renderer {
         const y = cell.y * scale;
         const size = Math.max(2, cell.size * scale * 0.5);
 
-        ctx.fillStyle = isSelf ? '#4ecdc4' : '#ff6b6b';
+        ctx.fillStyle = isSelf ? '#00ff88' : '#ff6b35';
         ctx.beginPath();
         ctx.arc(x, y, size, 0, Math.PI * 2);
         ctx.fill();
@@ -300,17 +412,23 @@ class Renderer {
   }
 
   // Main render function
-  render(state, selfId, minimapCanvas) {
+  render(state, selfId, minimapCanvas, particles) {
     this.clear();
     this.drawGrid();
     this.drawBorder();
 
     if (state) {
       this.drawFood(state.food);
+      this.drawViruses(state.viruses);  // Draw viruses before players
       this.drawPlayers(state.players, selfId);
 
+      // Draw particles on top
+      if (particles && particles.length > 0) {
+        this.drawParticles(particles);
+      }
+
       if (minimapCanvas) {
-        this.drawMinimap(state.players, selfId, minimapCanvas);
+        this.drawMinimap(state.players, selfId, minimapCanvas, state.viruses);
       }
     }
   }
