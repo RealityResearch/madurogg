@@ -73,17 +73,32 @@ class SolanaDistributor {
   }
 
   /**
-   * Load prize wallet from keypair file
+   * Load prize wallet from env var (base64) or keypair file
    */
   async loadPrizeWallet() {
+    // Option 1: Load from PRIZE_WALLET_SECRET env var (base64 encoded JSON array)
+    if (process.env.PRIZE_WALLET_SECRET) {
+      try {
+        const decoded = Buffer.from(process.env.PRIZE_WALLET_SECRET, 'base64').toString('utf8');
+        const secretKey = JSON.parse(decoded);
+        this.prizeWallet = Keypair.fromSecretKey(Uint8Array.from(secretKey));
+        console.log('[Solana] Loaded prize wallet from PRIZE_WALLET_SECRET env var');
+        return;
+      } catch (error) {
+        throw new Error(`Failed to parse PRIZE_WALLET_SECRET: ${error.message}`);
+      }
+    }
+
+    // Option 2: Load from keypair file
     const resolved = path.resolve(this.prizeWalletPath);
 
     if (!fs.existsSync(resolved)) {
-      throw new Error(`Prize wallet not found: ${resolved}. Run: npm run wallet:create`);
+      throw new Error(`Prize wallet not found. Set PRIZE_WALLET_SECRET env var or run: npm run wallet:create`);
     }
 
     const secretKey = JSON.parse(fs.readFileSync(resolved, 'utf8'));
     this.prizeWallet = Keypair.fromSecretKey(Uint8Array.from(secretKey));
+    console.log('[Solana] Loaded prize wallet from file');
   }
 
   /**
