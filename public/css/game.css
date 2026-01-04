@@ -361,23 +361,42 @@ body {
   letter-spacing: 1px;
 }
 
-.respawn-btn {
-  padding: 18px 50px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  font-family: 'Inter', sans-serif;
-  background: var(--text-primary);
-  border: none;
-  color: var(--bg-primary);
-  cursor: pointer;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  transition: all 0.2s ease;
+/* Death screen buttons */
+.death-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
 }
 
-.respawn-btn:hover {
-  background: var(--accent-primary);
-  transform: translateY(-2px);
+.death-buttons .btn-primary,
+.death-buttons .btn-secondary {
+  width: 100%;
+  padding: 14px 30px;
+}
+
+.death-buttons .btn-exit {
+  margin-top: 10px;
+  color: var(--accent-critical);
+  border-color: var(--accent-critical);
+}
+
+.death-buttons .btn-exit:hover {
+  background: var(--accent-critical);
+  color: var(--bg-primary);
+}
+
+/* Lobby full status message */
+.death-lobby-status {
+  font-size: 0.8rem;
+  color: var(--accent-warning);
+  margin-top: 15px;
+  margin-bottom: 5px;
+  min-height: 20px;
+}
+
+.death-lobby-status.lobby-full {
+  color: var(--accent-critical);
 }
 
 /* Loading screen */
@@ -861,5 +880,202 @@ body {
 
   .overlay-content p {
     font-size: 0.8rem;
+  }
+}
+
+/* ============ PAUSE MENU ============ */
+#pause-menu {
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.pause-modal {
+  max-width: 320px;
+}
+
+.pause-modal h2 {
+  color: var(--text-primary);
+  margin-bottom: 25px;
+}
+
+.pause-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.pause-buttons .btn-primary,
+.pause-buttons .btn-secondary {
+  width: 100%;
+  padding: 14px 30px;
+}
+
+.pause-buttons .btn-exit {
+  margin-top: 10px;
+  color: var(--accent-critical);
+  border-color: var(--accent-critical);
+}
+
+.pause-buttons .btn-exit:hover {
+  background: var(--accent-critical);
+  color: var(--bg-primary);
+}
+
+.pause-hint {
+  font-size: 0.7rem !important;
+  color: var(--text-muted) !important;
+  margin-bottom: 0 !important;
+}
+
+/* Mobile hamburger menu button */
+.menu-hamburger {
+  position: fixed;
+  top: 20px;
+  right: 250px;
+  width: 44px;
+  height: 44px;
+  background: rgba(10, 10, 10, 0.9);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px;
+}
+
+.menu-hamburger span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.menu-hamburger:hover span {
+  background: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  .menu-hamburger {
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* ============ TUTORIAL OVERLAY ============ */
+#tutorial-overlay {
+  z-index: 2100;
+  background: rgba(0, 0, 0, 0.92);
+}
+
+.tutorial-modal {
+  max-width: 450px;
+  text-align: left;
+  padding: 40px 50px;
+}
+
+.tutorial-modal h2 {
+  text-align: center;
+  color: var(--accent-primary);
+  margin-bottom: 30px;
+  font-size: 1.5rem;
+}
+
+.tutorial-section {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tutorial-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 30px;
+}
+
+.tutorial-section h3 {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+.tutorial-section p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 0;
+}
+
+.tutorial-section p strong {
+  color: var(--accent-primary);
+}
+
+.tutorial-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.control-row kbd {
+  min-width: 70px;
+  padding: 6px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--accent-primary);
+  text-align: center;
+}
+
+.rewards-section p strong {
+  color: var(--accent-warning);
+}
+
+.tutorial-modal .btn-primary {
+  display: block;
+  width: 100%;
+  padding: 16px 30px;
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .tutorial-modal {
+    padding: 30px 25px;
+    max-width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .tutorial-modal h2 {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+  }
+
+  .tutorial-section {
+    margin-bottom: 18px;
+    padding-bottom: 15px;
+  }
+
+  .control-row {
+    font-size: 0.8rem;
+  }
+
+  .control-row kbd {
+    min-width: 55px;
+    font-size: 0.7rem;
   }
 }

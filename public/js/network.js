@@ -23,6 +23,10 @@ class NetworkManager {
     this.onEliminated = null;
     this.onRoundEndPrompt = null;
     this.onRequeued = null;
+
+    // Continuous mode callbacks
+    this.onLobbyFull = null;
+    this.onRewardSnapshot = null;
   }
 
   connect() {
@@ -153,6 +157,21 @@ class NetworkManager {
           this.onArenaUpdate(data);
         }
       });
+
+      // Lobby full (when trying to play again but arena is full)
+      this.socket.on('lobbyFull', (data) => {
+        this.mode = 'spectator';
+        if (this.onLobbyFull) {
+          this.onLobbyFull(data);
+        }
+      });
+
+      // Reward snapshot (every 10 minutes in continuous mode)
+      this.socket.on('rewardSnapshot', (data) => {
+        if (this.onRewardSnapshot) {
+          this.onRewardSnapshot(data);
+        }
+      });
     });
   }
 
@@ -187,10 +206,17 @@ class NetworkManager {
     }
   }
 
-  // Request to re-queue from spectator mode
+  // Request to play again from spectator mode
   requeue() {
     if (this.socket && this.connected) {
       this.socket.emit('requeue');
+    }
+  }
+
+  // Spectate a specific player
+  spectatePlayer(targetId) {
+    if (this.socket && this.connected) {
+      this.socket.emit('spectatePlayer', { targetId });
     }
   }
 

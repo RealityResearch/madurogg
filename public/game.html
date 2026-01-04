@@ -35,7 +35,8 @@
     <!-- Controls hint (desktop) -->
     <div class="hud-controls desktop-only">
       <span><kbd>SPACE</kbd> Split</span>
-      <span><kbd>W</kbd> Eject</span>
+      <span><kbd>E</kbd> Eject</span>
+      <span><kbd>ESC</kbd> Menu</span>
     </div>
 
     <!-- Mobile controls -->
@@ -57,7 +58,7 @@
   <!-- Death screen -->
   <div id="death-screen" class="hidden">
     <div class="death-content">
-      <h2>💀 EATEN!</h2>
+      <h2>EATEN!</h2>
       <p>You were consumed by <span id="killer-name">someone</span></p>
       <div class="death-stats">
         <div class="death-stat">
@@ -69,7 +70,72 @@
           <span class="death-label">Kills</span>
         </div>
       </div>
-      <button id="respawn-btn" class="respawn-btn">PLAY AGAIN</button>
+      <p id="death-lobby-status" class="death-lobby-status"></p>
+      <div class="death-buttons">
+        <button id="btn-spectate-killer" class="btn-secondary">SPECTATE KILLER</button>
+        <button id="btn-death-play-again" class="btn-primary">PLAY AGAIN</button>
+        <button id="btn-death-exit" class="btn-secondary btn-exit">EXIT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pause Menu -->
+  <div id="pause-menu" class="modal hidden">
+    <div class="modal-content pause-modal">
+      <h2>PAUSED</h2>
+      <div class="pause-buttons">
+        <button id="btn-resume" class="btn-primary">RESUME</button>
+        <button id="btn-how-to-play" class="btn-secondary">HOW TO PLAY</button>
+        <button id="btn-fullscreen" class="btn-secondary">FULLSCREEN</button>
+        <button id="btn-exit-lobby" class="btn-secondary btn-exit">EXIT TO LOBBY</button>
+      </div>
+      <p class="pause-hint">Press ESC to resume</p>
+    </div>
+  </div>
+
+  <!-- Mobile Menu Button -->
+  <button id="menu-btn" class="menu-hamburger" aria-label="Menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Tutorial Overlay -->
+  <div id="tutorial-overlay" class="modal hidden">
+    <div class="modal-content tutorial-modal">
+      <h2>HOW TO PLAY</h2>
+
+      <div class="tutorial-section">
+        <h3>CONTROLS</h3>
+        <div class="tutorial-controls">
+          <div class="control-row">
+            <kbd>WASD</kbd> <span>Move around</span>
+          </div>
+          <div class="control-row">
+            <kbd>SPACE</kbd> <span>Split (35+ mass)</span>
+          </div>
+          <div class="control-row">
+            <kbd>E</kbd> <span>Eject mass (32+ mass)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tutorial-section">
+        <h3>OBJECTIVE</h3>
+        <p>Eat food pellets and smaller players to grow. You must be <strong>25% larger</strong> to eat another player.</p>
+      </div>
+
+      <div class="tutorial-section">
+        <h3>VIRUSES</h3>
+        <p>Green spiky circles. Small cells can hide inside safely. Large cells (150+ mass) will <strong>EXPLODE</strong> on contact!</p>
+      </div>
+
+      <div class="tutorial-section rewards-section">
+        <h3>REWARDS</h3>
+        <p>Top 3 players each round win SOL! You must hold <strong>$MADURO</strong> tokens to be eligible.</p>
+      </div>
+
+      <button id="btn-got-it" class="btn-primary">GOT IT!</button>
     </div>
   </div>
 

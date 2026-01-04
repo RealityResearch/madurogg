@@ -1,4 +1,4 @@
-// Official Agar.io Constants
+// Official Agar.io Constants with Aggressive Decay for Anti-Snowball
 const CONSTANTS = {
   START_MASS: 10,           // Starting mass
   MIN_MASS: 10,             // Minimum mass
@@ -13,8 +13,15 @@ const CONSTANTS = {
   BASE_SPEED: 2.2,          // Base movement speed
   SPEED_FACTOR: 0.004,      // Speed reduction per mass unit
   MIN_SPEED: 0.5,           // Minimum movement speed
-  // Decay: ~0.002% per second, scaled by size
-  DECAY_RATE: 0.00002       // Mass decay rate per tick
+
+  // Aggressive tiered decay to prevent snowballing
+  DECAY_RATE: 0.00002,      // Base decay rate per tick (mass < 500)
+  DECAY_TIER_1: 500,        // Mass threshold for 2x decay
+  DECAY_TIER_2: 1000,       // Mass threshold for 3x decay
+  DECAY_TIER_3: 2000,       // Mass threshold for 4x decay
+  DECAY_MULTIPLIER_1: 2,    // 2x decay for mass 500-999
+  DECAY_MULTIPLIER_2: 3,    // 3x decay for mass 1000-1999
+  DECAY_MULTIPLIER_3: 4,    // 4x decay for mass 2000+
 };
 
 class Player {
@@ -128,10 +135,20 @@ class Player {
         cell.velocityY = 0;
       }
 
-      // Mass decay: larger cells lose mass faster
-      // Only decay above minimum mass, rate scales with mass
+      // Mass decay: larger cells lose mass MUCH faster (anti-snowball)
+      // Tiered decay prevents dominant players from staying on top forever
       if (cell.mass > CONSTANTS.MIN_MASS) {
-        const decay = cell.mass * CONSTANTS.DECAY_RATE;
+        let decayMultiplier = 1;
+
+        if (cell.mass >= CONSTANTS.DECAY_TIER_3) {
+          decayMultiplier = CONSTANTS.DECAY_MULTIPLIER_3; // 4x decay
+        } else if (cell.mass >= CONSTANTS.DECAY_TIER_2) {
+          decayMultiplier = CONSTANTS.DECAY_MULTIPLIER_2; // 3x decay
+        } else if (cell.mass >= CONSTANTS.DECAY_TIER_1) {
+          decayMultiplier = CONSTANTS.DECAY_MULTIPLIER_1; // 2x decay
+        }
+
+        const decay = cell.mass * CONSTANTS.DECAY_RATE * decayMultiplier;
         cell.mass = Math.max(CONSTANTS.MIN_MASS, cell.mass - decay);
         cell.size = this.massToSize(cell.mass);
       }

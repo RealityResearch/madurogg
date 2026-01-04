@@ -1,6 +1,13 @@
 const Player = require('./player');
 const CONSTANTS = Player.CONSTANTS;
 
+// Bounty system - killing top players gives bonus mass
+const BOUNTY = {
+  RANK_1_BONUS: 0.5,    // +50% mass when killing #1 player
+  RANK_2_BONUS: 0.3,    // +30% mass when killing #2 player
+  RANK_3_BONUS: 0.2,    // +20% mass when killing #3 player
+};
+
 // Virus constants
 const VIRUS = {
   MASS: 100,                    // Mass of a virus
@@ -273,6 +280,13 @@ class Game {
   checkPlayerCollisions() {
     const players = Array.from(this.players.values());
 
+    // Get current rankings for bounty system
+    const rankings = this.getLeaderboard();
+    const rankMap = new Map();
+    rankings.forEach((p, index) => {
+      rankMap.set(p.id, index + 1); // 1-indexed rank
+    });
+
     for (let i = 0; i < players.length; i++) {
       for (let j = 0; j < players.length; j++) {
         if (i === j) continue;
@@ -288,8 +302,20 @@ class Game {
             // OFFICIAL RULE: Must be 25% larger (1.25x mass) to eat
             // Also, the smaller cell must be mostly inside the larger one
             if (cell1.mass > cell2.mass * CONSTANTS.EAT_RATIO && dist < cell1.size - cell2.size * 0.4) {
-              // Eat the smaller cell - gain ALL its mass
-              p1.addMass(cell2.mass, false);
+              // Calculate bounty bonus based on victim's rank
+              const victimRank = rankMap.get(p2.id) || 999;
+              let bountyBonus = 0;
+
+              if (victimRank === 1) {
+                bountyBonus = Math.floor(cell2.mass * BOUNTY.RANK_1_BONUS);
+              } else if (victimRank === 2) {
+                bountyBonus = Math.floor(cell2.mass * BOUNTY.RANK_2_BONUS);
+              } else if (victimRank === 3) {
+                bountyBonus = Math.floor(cell2.mass * BOUNTY.RANK_3_BONUS);
+              }
+
+              // Eat the smaller cell - gain ALL its mass + bounty
+              p1.addMass(cell2.mass + bountyBonus, false);
 
               // Track kill position for particles
               const killX = cell2.x;
@@ -310,7 +336,9 @@ class Game {
                   x: killX,
                   y: killY,
                   color: killColor,
-                  victimMass: cell2.mass
+                  victimMass: cell2.mass,
+                  bountyBonus,
+                  victimRank
                 });
 
                 p2.respawn(this.worldSize);

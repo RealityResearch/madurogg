@@ -178,17 +178,36 @@ io.on('connection', (socket) => {
     arena.ejectMass(socket.id);
   });
 
-  // Spectator requests to re-queue
+  // Spectator requests to play again (replaces requeue for continuous mode)
   socket.on('requeue', () => {
-    const result = arena.requeueFromSpectator(socket.id);
+    const result = arena.playAgain(socket.id);
     if (result.success) {
-      socket.emit('requeued', {
-        position: result.position,
-        queueSize: result.queueSize
-      });
+      if (result.mode === 'arena') {
+        socket.emit('joined', {
+          id: socket.id,
+          mode: 'arena',
+          player: result.player,
+          worldSize: result.worldSize,
+          state: result.state,
+          timeUntilReward: result.timeUntilReward,
+          config: Arena.CONFIG
+        });
+      } else {
+        // Lobby full, back to spectator
+        socket.emit('lobbyFull', {
+          message: result.message,
+          watching: result.watching,
+          watchingId: result.watchingId
+        });
+      }
     } else {
       socket.emit('requeueError', { error: result.error });
     }
+  });
+
+  // Spectator changes who they're watching
+  socket.on('spectatePlayer', (data) => {
+    arena.spectatePlayer(socket.id, data.targetId);
   });
 
   // Disconnect

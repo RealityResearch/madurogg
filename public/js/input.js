@@ -66,6 +66,14 @@ class InputManager {
         }
       }
 
+      // ESC = toggle pause menu
+      if (e.code === 'Escape') {
+        e.preventDefault();
+        if (window.game) {
+          window.game.togglePauseMenu();
+        }
+      }
+
       // Shift = boost
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
         this.startBoost();

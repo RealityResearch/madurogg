@@ -25,11 +25,13 @@ class Game {
       state: 'waiting'
     };
 
-    // Battle Royale state
-    this.roundState = 'waiting';
-    this.roundNumber = 0;
-    this.roundTimeRemaining = 0;
-    this.roundConfig = null;
+    // Continuous mode state
+    this.roundState = 'playing'; // Always playing in continuous mode
+    this.nextRewardTime = Date.now() + 10 * 60 * 1000; // Default 10 min
+
+    // Track killer for spectate option
+    this.lastKillerId = null;
+    this.lastKillerName = null;
 
     // Interpolation
     this.lastUpdateTime = 0;
@@ -40,6 +42,10 @@ class Game {
 
     // Particles
     this.particles = [];
+
+    // Pause/Tutorial state
+    this.isPaused = false;
+    this.isTutorialOpen = false;
 
     // UI elements
     this.loadingScreen = document.getElementById('loading-screen');
@@ -55,6 +61,9 @@ class Game {
     this.createPlayAgainModal();
     this.createQueueOverlay();
     this.createSpectatorOverlay();
+    this.setupPauseMenu();
+    this.setupTutorial();
+    this.setupDeathScreen();
 
     // Get player data from session
     const data = sessionStorage.getItem('playerData');
@@ -74,17 +83,14 @@ class Game {
     infoDiv.innerHTML = `
       <div class="arena-stat">
         <span class="label">PLAYERS</span>
-        <span id="arena-players">0/30</span>
-      </div>
-      <div class="arena-stat">
-        <span class="label">QUEUE</span>
-        <span id="arena-queue">0</span>
+        <span id="arena-players">0/50</span>
       </div>
       <div class="arena-stat">
         <span class="label">WATCHING</span>
         <span id="arena-spectators">0</span>
       </div>
       <div class="arena-stat timer">
+        <span class="label">NEXT REWARD</span>
         <span id="arena-timer">--:--</span>
       </div>
     `;
@@ -157,6 +163,158 @@ class Game {
     });
   }
 
+  setupPauseMenu() {
+    // Pause menu elements
+    this.pauseMenu = document.getElementById('pause-menu');
+    this.menuBtn = document.getElementById('menu-btn');
+
+    // Resume button
+    document.getElementById('btn-resume').addEventListener('click', () => {
+      this.hidePauseMenu();
+    });
+
+    // How to Play button
+    document.getElementById('btn-how-to-play').addEventListener('click', () => {
+      this.hidePauseMenu();
+      this.showTutorial();
+    });
+
+    // Fullscreen button
+    document.getElementById('btn-fullscreen').addEventListener('click', () => {
+      this.toggleFullscreen();
+    });
+
+    // Exit to lobby button
+    document.getElementById('btn-exit-lobby').addEventListener('click', () => {
+      window.location.href = '/';
+    });
+
+    // Mobile hamburger menu button
+    if (this.menuBtn) {
+      this.menuBtn.addEventListener('click', () => {
+        this.togglePauseMenu();
+      });
+    }
+  }
+
+  setupTutorial() {
+    this.tutorialOverlay = document.getElementById('tutorial-overlay');
+
+    // Got It button
+    document.getElementById('btn-got-it').addEventListener('click', () => {
+      this.hideTutorial();
+    });
+
+    // Check for first visit - show tutorial automatically
+    if (!localStorage.getItem('madurogg_tutorial_seen')) {
+      // Delay slightly to let the game load first
+      setTimeout(() => {
+        if (!this.loadingScreen.classList.contains('hidden')) {
+          // Wait for loading to finish
+          const checkLoading = setInterval(() => {
+            if (this.loadingScreen.classList.contains('hidden')) {
+              clearInterval(checkLoading);
+              this.showTutorial();
+              localStorage.setItem('madurogg_tutorial_seen', 'true');
+            }
+          }, 100);
+        } else {
+          this.showTutorial();
+          localStorage.setItem('madurogg_tutorial_seen', 'true');
+        }
+      }, 500);
+    }
+  }
+
+  setupDeathScreen() {
+    // Spectate Killer button
+    const spectateKillerBtn = document.getElementById('btn-spectate-killer');
+    if (spectateKillerBtn) {
+      spectateKillerBtn.addEventListener('click', () => {
+        document.getElementById('death-screen').classList.add('hidden');
+        document.getElementById('spectator-message').textContent =
+          `Watching ${this.lastKillerName || 'player'}...`;
+        document.getElementById('spectator-overlay').classList.remove('hidden');
+
+        if (this.lastKillerId) {
+          window.networkManager.spectatePlayer(this.lastKillerId);
+        }
+      });
+    }
+
+    // Play Again button
+    const playAgainBtn = document.getElementById('btn-death-play-again');
+    if (playAgainBtn) {
+      playAgainBtn.addEventListener('click', () => {
+        document.getElementById('death-screen').classList.add('hidden');
+        window.networkManager.requeue();
+      });
+    }
+
+    // Exit button
+    const exitBtn = document.getElementById('btn-death-exit');
+    if (exitBtn) {
+      exitBtn.addEventListener('click', () => {
+        window.location.href = '/';
+      });
+    }
+  }
+
+  togglePauseMenu() {
+    // Don't toggle if tutorial is open
+    if (this.isTutorialOpen) {
+      this.hideTutorial();
+      return;
+    }
+
+    if (this.isPaused) {
+      this.hidePauseMenu();
+    } else {
+      this.showPauseMenu();
+    }
+  }
+
+  showPauseMenu() {
+    this.isPaused = true;
+    this.pauseMenu.classList.remove('hidden');
+    // Show cursor when paused
+    document.body.style.cursor = 'default';
+  }
+
+  hidePauseMenu() {
+    this.isPaused = false;
+    this.pauseMenu.classList.add('hidden');
+    // Hide cursor again if on desktop
+    if (!window.inputManager.isMobile) {
+      document.body.style.cursor = 'none';
+    }
+  }
+
+  showTutorial() {
+    this.isTutorialOpen = true;
+    this.tutorialOverlay.classList.remove('hidden');
+    document.body.style.cursor = 'default';
+  }
+
+  hideTutorial() {
+    this.isTutorialOpen = false;
+    this.tutorialOverlay.classList.add('hidden');
+    // Hide cursor again if on desktop and not paused
+    if (!window.inputManager.isMobile && !this.isPaused) {
+      document.body.style.cursor = 'none';
+    }
+  }
+
+  toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.log('Fullscreen error:', err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }
+
   showPlayAgainModal(result) {
     document.getElementById('round-result').textContent = result;
     document.getElementById('play-again-modal').classList.remove('hidden');
@@ -168,12 +326,17 @@ class Game {
 
   updateArenaInfo(data) {
     if (data.players !== undefined) {
+      const maxPlayers = data.maxPlayers || 50;
       document.getElementById('arena-players').textContent =
-        `${data.players}/${data.maxPlayers || 30}`;
-    }
-    if (data.queue !== undefined || data.queueSize !== undefined) {
-      document.getElementById('arena-queue').textContent =
-        data.queue || data.queueSize || 0;
+        `${data.players}/${maxPlayers}`;
+
+      // Update player count element styling if full
+      const playersEl = document.getElementById('arena-players');
+      if (data.players >= maxPlayers) {
+        playersEl.style.color = '#ff6b35'; // Orange when full
+      } else {
+        playersEl.style.color = ''; // Default
+      }
     }
     if (data.spectators !== undefined || data.spectatorsCount !== undefined) {
       document.getElementById('arena-spectators').textContent =
@@ -212,6 +375,10 @@ class Game {
       window.networkManager.onRoundEndPrompt = (data) => this.onRoundEndPrompt(data);
       window.networkManager.onRequeued = (data) => this.onRequeued(data);
 
+      // Continuous mode callbacks
+      window.networkManager.onLobbyFull = (data) => this.onLobbyFull(data);
+      window.networkManager.onRewardSnapshot = (data) => this.onRewardSnapshot(data);
+
       // Join the game
       window.networkManager.join(this.playerData.username, this.playerData.wallet);
 
@@ -245,10 +412,12 @@ class Game {
     this.mode = data.mode;
     this.worldSize = data.worldSize || 4000;
     this.renderer.worldSize = this.worldSize;
-    this.roundConfig = data.config;
-    this.roundState = data.state || 'waiting';
-    this.roundNumber = data.roundNumber || 0;
-    this.roundTimeRemaining = data.timeRemaining || 0;
+    this.arenaConfig = data.config;
+
+    // Update reward timer
+    if (data.timeUntilReward) {
+      this.nextRewardTime = Date.now() + data.timeUntilReward;
+    }
 
     // Hide loading screen
     this.loadingScreen.classList.add('hidden');
@@ -259,16 +428,20 @@ class Game {
       this.mode = 'arena';
       document.getElementById('queue-overlay').classList.add('hidden');
       document.getElementById('spectator-overlay').classList.add('hidden');
+      document.getElementById('death-screen').classList.add('hidden');
       console.log('Mode set to arena, isPlaying:', this.isPlaying);
-    } else if (data.mode === 'queue') {
-      this.isPlaying = false;
-      this.queuePosition = data.position;
-      document.getElementById('queue-position').textContent = data.position;
-      document.getElementById('queue-overlay').classList.remove('hidden');
-      document.getElementById('spectator-overlay').classList.add('hidden');
     } else if (data.mode === 'spectator') {
       this.isPlaying = false;
       document.getElementById('queue-overlay').classList.add('hidden');
+      document.getElementById('death-screen').classList.add('hidden');
+
+      // Show spectator overlay with lobby full message if applicable
+      if (data.reason === 'lobby_full') {
+        document.getElementById('spectator-message').textContent = data.message || 'Lobby is full';
+        this.showAnnouncement('LOBBY FULL - Spectating...', 'waiting');
+      } else {
+        document.getElementById('spectator-message').textContent = 'Watching the battle...';
+      }
       document.getElementById('spectator-overlay').classList.remove('hidden');
     }
   }
@@ -292,9 +465,69 @@ class Game {
     console.log('Eliminated:', data);
     this.mode = 'spectator';
     this.isPlaying = false;
-    document.getElementById('spectator-message').textContent =
-      data.killedBy ? `Eaten by ${data.killedBy}` : 'You were eliminated';
+    this.lastKillerId = data.killerId;
+    this.lastKillerName = data.killedBy;
+
+    // Show enhanced death screen
+    this.showDeathScreen(data);
+  }
+
+  showDeathScreen(data) {
+    // Hide other overlays
+    document.getElementById('queue-overlay').classList.add('hidden');
+
+    // Update death screen content
+    document.getElementById('killer-name').textContent = data.killedBy || 'someone';
+    document.getElementById('final-score').textContent = (data.finalScore || 0).toLocaleString();
+    document.getElementById('final-kills').textContent = data.finalKills || 0;
+
+    // Update lobby status
+    const lobbyStatus = document.getElementById('death-lobby-status');
+    if (lobbyStatus) {
+      if (data.lobbyFull) {
+        lobbyStatus.textContent = 'Lobby is full - you will spectate until a spot opens';
+        lobbyStatus.classList.add('lobby-full');
+      } else {
+        lobbyStatus.textContent = '';
+        lobbyStatus.classList.remove('lobby-full');
+      }
+    }
+
+    // Show death screen
+    document.getElementById('death-screen').classList.remove('hidden');
+  }
+
+  onLobbyFull(data) {
+    console.log('Lobby full:', data);
+    this.mode = 'spectator';
+    this.isPlaying = false;
+
+    // Hide death screen, show spectator overlay with lobby full message
+    document.getElementById('death-screen').classList.add('hidden');
+
+    document.getElementById('spectator-message').textContent = data.message;
     document.getElementById('spectator-overlay').classList.remove('hidden');
+
+    this.showAnnouncement('LOBBY FULL - Spectating...', 'waiting');
+  }
+
+  onRewardSnapshot(data) {
+    console.log('Reward snapshot:', data);
+
+    if (data.success && data.winners && data.winners.length > 0) {
+      // Show winners announcement
+      const winnerText = data.winners.slice(0, 3).map(w =>
+        `#${w.rank} ${w.username} (${w.percentage}%)`
+      ).join(' | ');
+
+      this.showAnnouncement(`REWARDS DISTRIBUTED! ${winnerText}`, 'winner');
+
+      // Update next reward timer
+      this.nextRewardTime = Date.now() + data.nextRewardIn;
+    } else {
+      this.showAnnouncement(data.message || 'Rewards skipped', 'waiting');
+      this.nextRewardTime = Date.now() + data.nextRewardIn;
+    }
   }
 
   onRoundEndPrompt(data) {
@@ -392,32 +625,37 @@ class Game {
 
   startTimerLoop() {
     setInterval(() => {
-      if (this.state && this.state.timeRemaining !== undefined) {
-        this.roundTimeRemaining = this.state.timeRemaining;
+      // Update next reward time from state if available
+      if (this.state && this.state.timeUntilReward !== undefined) {
+        this.nextRewardTime = Date.now() + this.state.timeUntilReward;
       }
 
-      const minutes = Math.floor(this.roundTimeRemaining / 60000);
-      const seconds = Math.floor((this.roundTimeRemaining % 60000) / 1000);
+      const timeUntilReward = Math.max(0, this.nextRewardTime - Date.now());
+      const minutes = Math.floor(timeUntilReward / 60000);
+      const seconds = Math.floor((timeUntilReward % 60000) / 1000);
       const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
       const timerEl = document.getElementById('arena-timer');
+      const timerLabel = document.querySelector('.arena-stat.timer .label');
 
-      if (this.roundState === 'playing') {
-        timerEl.textContent = timeStr;
-        timerEl.style.color = this.roundTimeRemaining < 60000 ? '#ff4444' : '#00ff00';
-      } else if (this.roundState === 'countdown') {
-        timerEl.textContent = `${seconds}s`;
-        timerEl.style.color = '#ffcc00';
+      // Update timer label
+      if (timerLabel) {
+        timerLabel.textContent = 'NEXT REWARD';
+      }
+
+      timerEl.textContent = timeStr;
+      // Change color as reward approaches
+      if (timeUntilReward < 60000) {
+        timerEl.style.color = '#FFD700'; // Gold when close
       } else {
-        timerEl.textContent = 'WAITING';
-        timerEl.style.color = '#888';
+        timerEl.style.color = '#00ff00'; // Green normally
       }
 
       // Also update arena info from state
       if (this.state) {
         this.updateArenaInfo({
           players: this.state.playersCount,
-          queue: this.state.queueCount,
+          maxPlayers: this.state.maxPlayers,
           spectators: this.state.spectatorsCount
         });
       }
