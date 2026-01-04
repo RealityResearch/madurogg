@@ -16,26 +16,79 @@
 ## Current Deployment Status
 
 ### Live URLs
-- **Game Server (Railway):** https://madurogg-production.up.railway.app
-- **Static (Vercel):** https://madurogg.vercel.app (landing only, no WebSockets)
+- **Production:** https://maduro.gg
+- **Railway Direct:** https://madurogg-production.up.railway.app
 
 ### GitHub
 - **Repo:** https://github.com/RealityResearch/madurogg
 - **Branch:** main
 
 ### What's Working
-- Game server live on Railway with WebSocket support
-- Moralis API integration returning live token data
-- Landing page with Trump/Maduro imagery
+- Custom domain (maduro.gg) via Cloudflare → Railway
+- Pump.fun API integration for live creator fee tracking
+- Landing page with Trump/Maduro imagery + live pump stats
 - Multiplayer gameplay (eat, split, eject)
-- Leaderboard and score tracking
+- Battle royale mode with 10-min rounds
+- Leaderboard with room-based scoring
 - Mobile controls (joystick + buttons)
 
 ### Next Steps
-1. Deploy Anchor escrow contract to devnet
-2. Test on-chain reward distribution
-3. Launch token on pump.fun
-4. Point maduro.gg domain to Railway
+1. Deploy Anchor escrow contract to mainnet
+2. Launch token on pump.fun
+3. Update config with real token address
+
+---
+
+## Launch Checklist
+
+When you launch the real $MADURO token on pump.fun, update these:
+
+### 1. Railway Environment Variables
+Go to Railway → Service → Variables → Update:
+
+```env
+TOKEN_MINT=<new-pump-fun-token-address>
+CREATOR_WALLET=<your-creator-wallet>
+ADMIN_SECRET=<strong-secret-for-admin-api>
+```
+
+### 2. Admin API (Live Config Update)
+Update config without redeploying:
+
+```bash
+curl -X POST https://maduro.gg/api/admin/config \
+  -H "Content-Type: application/json" \
+  -d '{
+    "adminSecret": "<your-admin-secret>",
+    "config": {
+      "tokenMint": "<new-token-address>",
+      "creatorWallet": "<your-wallet>",
+      "pumpUrl": "https://pump.fun/coin/<new-token-address>",
+      "twitter": "https://twitter.com/madurogg",
+      "telegram": "https://t.me/madurogg"
+    }
+  }'
+```
+
+### 3. Hardcoded Links to Update
+Search and replace the test token address in:
+- `public/index.html` - pump.fun link in hero
+- `public/how.html` - pump.fun link in Links section
+
+Or just use the admin API above and they'll auto-update via `/api/config`.
+
+### 4. After Launch Verify
+- [ ] `/api/pump` returns real token stats
+- [ ] `/api/token` returns real price data
+- [ ] Landing page shows live fees
+- [ ] Leaderboard shows pump stats
+- [ ] How It Works page shows correct token address
+
+### 5. Optional: Redeploy
+If you updated Railway env vars, redeploy to pick them up:
+```bash
+git commit --allow-empty -m "trigger redeploy" && git push
+```
 
 ---
 
@@ -78,22 +131,36 @@ Trustless escrow for reward distribution. Players don't have to trust that rewar
 
 ---
 
-## Moralis API Integration
+## Pump.fun API Integration
 
-Uses Moralis Solana API for real-time token price data.
+Uses pump.fun's native API for creator fee tracking. Located in `server/pump.js`.
 
-**API Key:** Configured in `MORALIS_CONFIG` in `server/index.js`
+**Base URL:** `https://swap-api.pump.fun`
 
-**Endpoint Used:**
+**Endpoints Used:**
 ```
-GET https://solana-gateway.moralis.io/token/mainnet/{tokenAddress}/price
-Headers: X-API-Key: {apiKey}
+GET /v1/creators/{creator}/fees?interval=30m&limit=336
+GET /v1/creators/{creator}/fees/total
+GET /v1/coins/{mint}
 ```
+
+**Our Endpoint:** `GET /api/pump`
 
 **Response includes:**
-- `usdPrice` - Token price in USD
-- `nativePrice` - Token price in SOL
-- `exchangeName` - DEX where price was fetched (Raydium, Pump.fun, etc.)
+- `balanceSOL` - Total creator fees earned
+- `fees24hSOL` - Fees in last 24 hours
+- `trades24h` - Trade count in last 24 hours
+- `holders` - Number of token holders
+- `solPriceUSD` - Current SOL price (via Jupiter/CoinGecko)
+- `sparklineSOL` - Time series for charts
+
+---
+
+## Moralis API Integration (Backup)
+
+Uses Moralis Solana API for token price data as backup.
+
+**Endpoint:** `GET /api/token`
 
 **Docs:** https://docs.moralis.com/web3-data-api/solana/reference/get-sol-token-price
 
