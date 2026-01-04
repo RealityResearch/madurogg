@@ -46,15 +46,89 @@
 - Admin API with secret authentication
 
 ### Pending
-- [ ] DNS propagation (GoDaddy → Cloudflare nameservers)
-- [ ] Verify maduro.gg resolves to Railway
-- [ ] Railway shows green checkmark for custom domain
+- [x] DNS propagation (GoDaddy → Cloudflare nameservers)
+- [x] Verify maduro.gg resolves to Railway
+- [ ] Test Anchor contract on devnet
+- [ ] Deploy Anchor contract to mainnet
 
 ### Next Steps
-1. Verify maduro.gg is live after DNS propagates
-2. Deploy Anchor escrow contract to mainnet
+1. Test Anchor escrow contract on devnet
+2. Deploy contract to mainnet
 3. Launch real token on pump.fun
 4. Update config with real token address
+
+---
+
+## Anchor Contract Testing (Devnet)
+
+### Contract Location
+`contracts/programs/trumpworm/src/lib.rs`
+
+### Program ID (Devnet)
+`Hqp3bwuxLTJGjsacPzo7Q2bpW9snYyDzxQXq1gY1e9EK`
+
+### Test Scenarios
+
+#### 1. Initialize Treasury
+```bash
+# Create game treasury PDA
+anchor test --skip-local-validator
+# Or manually:
+solana program invoke ... initialize
+```
+**Expected:** Treasury PDA created, admin set
+
+#### 2. Register Player
+```bash
+# Register a test wallet as player
+```
+**Expected:** Player account created with 0 stats
+
+#### 3. Update Player Stats
+```bash
+# Server updates player score/kills after game
+```
+**Expected:** Player stats updated, only admin can call
+
+#### 4. Distribute Rewards
+```bash
+# Distribute from treasury to top 10 wallets
+```
+**Expected:** Tokens transferred to winners, event emitted
+
+#### 5. Admin Withdraw
+```bash
+# Emergency withdraw from treasury
+```
+**Expected:** Only admin can withdraw, tokens sent to admin wallet
+
+### Test Wallets (Devnet)
+- Admin: `<your-devnet-wallet>`
+- Player 1: `<test-wallet-1>`
+- Player 2: `<test-wallet-2>`
+
+### Devnet Commands
+```bash
+# Set cluster to devnet
+solana config set --url devnet
+
+# Airdrop SOL for testing
+solana airdrop 2
+
+# Deploy contract
+anchor deploy --provider.cluster devnet
+
+# Run tests
+anchor test --provider.cluster devnet
+```
+
+### Mainnet Deployment Checklist
+- [ ] All devnet tests pass
+- [ ] Treasury initialized correctly
+- [ ] Reward distribution works
+- [ ] Admin functions secured
+- [ ] Program verified on Solscan
+- [ ] Update CLAUDE.md with mainnet program ID
 
 ---
 
