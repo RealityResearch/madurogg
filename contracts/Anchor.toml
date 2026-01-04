@@ -6,10 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-trumpworm = "Hqp3bwuxLTJGjsacPzo7Q2bpW9snYyDzxQXq1gY1e9EK"
+trumpworm = "DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF"
 
 [programs.devnet]
-trumpworm = "Hqp3bwuxLTJGjsacPzo7Q2bpW9snYyDzxQXq1gY1e9EK"
+trumpworm = "DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF"
 
 [programs.mainnet]
 trumpworm = "DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF"

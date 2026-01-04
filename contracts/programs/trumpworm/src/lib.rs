@@ -1,9 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-// Devnet: Hqp3bwuxLTJGjsacPzo7Q2bpW9snYyDzxQXq1gY1e9EK
-// Mainnet: DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF
-declare_id!("Hqp3bwuxLTJGjsacPzo7Q2bpW9snYyDzxQXq1gY1e9EK");
+// Devnet & Mainnet: DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF
+declare_id!("DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF");
 
 /// MADURO.GG - Trustless Prize Pool Escrow
 ///
