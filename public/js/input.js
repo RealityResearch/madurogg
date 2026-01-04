@@ -52,6 +52,9 @@ class InputManager {
     // Touch split (double tap)
     let lastTap = 0;
     document.addEventListener('touchend', (e) => {
+      // Ignore if tapping on buttons
+      if (e.target.classList.contains('mobile-btn')) return;
+
       const now = Date.now();
       if (now - lastTap < 300) {
         if (window.networkManager) {
@@ -60,6 +63,28 @@ class InputManager {
       }
       lastTap = now;
     });
+
+    // Mobile button handlers
+    const splitBtn = document.getElementById('split-btn');
+    const ejectBtn = document.getElementById('eject-btn');
+
+    if (splitBtn) {
+      splitBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (window.networkManager) {
+          window.networkManager.split();
+        }
+      });
+    }
+
+    if (ejectBtn) {
+      ejectBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (window.networkManager) {
+          window.networkManager.eject();
+        }
+      });
+    }
   }
 
   // Convert screen coordinates to world coordinates

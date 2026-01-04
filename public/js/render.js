@@ -39,21 +39,27 @@ class Renderer {
       }
     };
 
-    // Load Trump image (player self)
+    // Load Trump image (player self) - Public domain White House official portrait
+    this.trumpImage.crossOrigin = 'anonymous';
     this.trumpImage.onload = onLoad;
     this.trumpImage.onerror = () => {
-      console.log('Trump image not found, using fallback');
+      console.log('Trump image not found, using local fallback');
+      this.trumpImage.src = '/assets/trump.svg';
       onLoad();
     };
-    this.trumpImage.src = '/assets/trump.svg';
+    // Official White House portrait - Public Domain
+    this.trumpImage.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Donald_Trump_official_portrait.jpg/220px-Donald_Trump_official_portrait.jpg';
 
-    // Load Maduro image (other players)
+    // Load Maduro image (other players) - Wikimedia Commons
+    this.maduroImage.crossOrigin = 'anonymous';
     this.maduroImage.onload = onLoad;
     this.maduroImage.onerror = () => {
-      console.log('Maduro image not found, using fallback');
+      console.log('Maduro image not found, using local fallback');
+      this.maduroImage.src = '/assets/maduro.svg';
       onLoad();
     };
-    this.maduroImage.src = '/assets/maduro.svg';
+    // Wikimedia Commons - Public Domain
+    this.maduroImage.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Nicol%C3%A1s_Maduro_2019.jpg/220px-Nicol%C3%A1s_Maduro_2019.jpg';
   }
 
   resize() {

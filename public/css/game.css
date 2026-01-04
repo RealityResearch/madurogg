@@ -341,24 +341,93 @@ body {
   mix-blend-mode: difference;
 }
 
+/* Mobile controls */
+.mobile-controls {
+  display: none;
+  position: absolute;
+  bottom: 30px;
+  left: 0;
+  right: 0;
+  justify-content: space-between;
+  padding: 0 30px;
+}
+
+.mobile-btn {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.split-btn {
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.4), rgba(78, 205, 196, 0.2));
+  border-color: #4ecdc4;
+}
+
+.eject-btn {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.4), rgba(255, 107, 107, 0.2));
+  border-color: #ff6b6b;
+}
+
+.mobile-btn:active {
+  transform: scale(0.9);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+  body {
+    cursor: default;
+  }
+
   .hud-leaderboard {
     display: none;
   }
 
   .hud-minimap {
-    width: 100px;
+    bottom: 130px;
+    right: 10px;
   }
 
   #minimap {
-    width: 90px;
-    height: 90px;
+    width: 80px;
+    height: 80px;
   }
 
-  .hud-controls {
-    gap: 15px;
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-controls {
+    display: flex;
+  }
+
+  .hud-score {
+    padding: 10px 25px;
+  }
+
+  #score {
+    font-size: 1.8rem;
+  }
+
+  .hud-wallet {
     font-size: 0.7rem;
-    padding: 8px 15px;
+    padding: 8px 12px;
+  }
+
+  .hud-reward {
+    bottom: 130px;
+    left: 10px;
+    padding: 8px 12px;
+  }
+
+  #reward-countdown {
+    font-size: 1rem;
   }
 }
