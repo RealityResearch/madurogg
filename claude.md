@@ -16,26 +16,45 @@
 ## Current Deployment Status
 
 ### Live URLs
-- **Production:** https://maduro.gg
+- **Production:** https://maduro.gg (DNS propagating from GoDaddy → Cloudflare)
 - **Railway Direct:** https://madurogg-production.up.railway.app
 
 ### GitHub
 - **Repo:** https://github.com/RealityResearch/madurogg
 - **Branch:** main
 
+### Infrastructure
+- **Hosting:** Railway (auto-detected port 8080)
+- **DNS:** Cloudflare (CNAME flattening for root domain)
+- **Domain Registrar:** GoDaddy (nameservers pointed to Cloudflare)
+- **Cloudflare NS:** faye.ns.cloudflare.com, ricardo.ns.cloudflare.com
+- **Railway CNAME:** 5c6b7hf6.up.railway.app
+
+### Environment Variables (Railway)
+- `TOKEN_MINT` - Pump.fun token address
+- `CREATOR_WALLET` - Creator wallet for fee tracking
+- `ADMIN_SECRET` - Secret for admin API endpoints (configured)
+
 ### What's Working
-- Custom domain (maduro.gg) via Cloudflare → Railway
+- Railway deployment with WebSocket support
 - Pump.fun API integration for live creator fee tracking
 - Landing page with Trump/Maduro imagery + live pump stats
 - Multiplayer gameplay (eat, split, eject)
 - Battle royale mode with 10-min rounds
 - Leaderboard with room-based scoring
 - Mobile controls (joystick + buttons)
+- Admin API with secret authentication
+
+### Pending
+- [ ] DNS propagation (GoDaddy → Cloudflare nameservers)
+- [ ] Verify maduro.gg resolves to Railway
+- [ ] Railway shows green checkmark for custom domain
 
 ### Next Steps
-1. Deploy Anchor escrow contract to mainnet
-2. Launch token on pump.fun
-3. Update config with real token address
+1. Verify maduro.gg is live after DNS propagates
+2. Deploy Anchor escrow contract to mainnet
+3. Launch real token on pump.fun
+4. Update config with real token address
 
 ---
 
