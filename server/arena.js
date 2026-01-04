@@ -1,4 +1,5 @@
 const Game = require('./game');
+const SolanaDistributor = require('./solana');
 
 /**
  * MADURO.GG Continuous Arena System
@@ -6,7 +7,7 @@ const Game = require('./game');
  * - Continuous gameplay (no round resets)
  * - 50 player cap with clear "lobby full" messaging
  * - Spectator overflow for player 51+
- * - 10-minute reward snapshots
+ * - 10-minute reward snapshots with real SOL distribution
  * - Hybrid reward tiers based on player count
  * - Bounty system for killing top players
  */
@@ -62,8 +63,28 @@ class Arena {
     this.totalKills = 0;
     this.peakPlayers = 0;
 
+    // Solana distributor for real SOL rewards
+    this.solanaDistributor = new SolanaDistributor();
+    this.initializeSolana();
+
     // Start reward timer
     this.startRewardTimer();
+  }
+
+  /**
+   * Initialize Solana connection (async)
+   */
+  async initializeSolana() {
+    try {
+      const initialized = await this.solanaDistributor.initialize();
+      if (initialized) {
+        console.log('[Arena] Solana distributor ready for real SOL rewards');
+      } else {
+        console.warn('[Arena] Solana distributor not initialized - rewards will be broadcast only');
+      }
+    } catch (error) {
+      console.error('[Arena] Failed to initialize Solana:', error.message);
+    }
   }
 
   // ============ PUBLIC GETTERS ============
@@ -107,7 +128,7 @@ class Arena {
     }
   }
 
-  distributeRewards() {
+  async distributeRewards() {
     if (this.players.size < ARENA_CONFIG.MIN_PLAYERS_FOR_REWARDS) {
       console.log('[Arena] Not enough players for rewards');
       this.broadcast('rewardSnapshot', {
@@ -126,14 +147,39 @@ class Arena {
     console.log(`[Arena] Distributing rewards to top ${tier.winners} players`);
     console.log(`[Arena] Winners:`, winners.map((w, i) => `#${i + 1} ${w.username}: ${w.score}`).join(', '));
 
-    // Prepare winner data for broadcast
-    const winnersData = winners.map((winner, index) => ({
-      rank: index + 1,
+    // Prepare winner data for Solana distribution
+    const winnersForSolana = winners.map((winner, index) => ({
       username: winner.username,
-      wallet: winner.wallet ? winner.wallet.slice(0, 4) + '...' + winner.wallet.slice(-4) : null,
+      wallet: winner.wallet,
       score: winner.score,
       percentage: tier.percentages[index]
     }));
+
+    // Attempt real SOL distribution
+    let distributionResult = null;
+    if (this.solanaDistributor.initialized) {
+      try {
+        distributionResult = await this.solanaDistributor.distribute(winnersForSolana);
+        console.log(`[Arena] SOL distribution result:`, distributionResult.success ? 'SUCCESS' : 'FAILED');
+      } catch (error) {
+        console.error('[Arena] SOL distribution error:', error.message);
+      }
+    }
+
+    // Prepare winner data for broadcast (truncate wallets for privacy)
+    const winnersData = winners.map((winner, index) => {
+      const result = distributionResult?.results?.find(r => r.wallet === winner.wallet);
+      return {
+        rank: index + 1,
+        username: winner.username,
+        wallet: winner.wallet ? winner.wallet.slice(0, 4) + '...' + winner.wallet.slice(-4) : null,
+        score: winner.score,
+        percentage: tier.percentages[index],
+        // Include SOL amount if distribution succeeded
+        solReceived: result?.status === 'success' ? result.amountSOL : null,
+        txSignature: result?.signature || null
+      };
+    });
 
     // Broadcast reward snapshot
     this.broadcast('rewardSnapshot', {
@@ -141,11 +187,16 @@ class Arena {
       winners: winnersData,
       playerCount: this.players.size,
       tier: tier.winners,
-      nextRewardIn: ARENA_CONFIG.REWARD_INTERVAL
+      nextRewardIn: ARENA_CONFIG.REWARD_INTERVAL,
+      // Include distribution stats
+      distribution: distributionResult ? {
+        success: distributionResult.success,
+        totalSent: distributionResult.totalSent,
+        eligibleCount: distributionResult.eligibleCount,
+        successCount: distributionResult.successCount
+      } : null
     });
 
-    // TODO: Actual SOL distribution via smart contract
-    // For now, just log it
     this.totalRewardsDistributed++;
     this.lastRewardTime = Date.now();
     this.nextRewardTime = Date.now() + ARENA_CONFIG.REWARD_INTERVAL;
