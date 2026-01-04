@@ -8,8 +8,60 @@
 - **Game**: Multiplayer cell eating game (Agar.io mechanics)
 - **Token**: $MADURO launched on pump.fun
 - **Domain**: maduro.gg
-- **Rewards**: Creator fees (0.3%) distributed to top players hourly
+- **Rewards**: Creator fees (0.3%) distributed to top players hourly via on-chain escrow
 - **Viral Hook**: Trump vs Maduro imagery - everyone is the hero of their own story
+
+---
+
+## Current Deployment Status
+
+### Live URLs
+- **Game Server (Railway):** https://madurogg-production.up.railway.app
+- **Static (Vercel):** https://madurogg.vercel.app (landing only, no WebSockets)
+
+### GitHub
+- **Repo:** https://github.com/RealityResearch/madurogg
+- **Branch:** main
+
+### What's Working
+- Game server live on Railway with WebSocket support
+- Moralis API integration returning live token data
+- Landing page with Trump/Maduro imagery
+- Multiplayer gameplay (eat, split, eject)
+- Leaderboard and score tracking
+- Mobile controls (joystick + buttons)
+
+### Next Steps
+1. Deploy Anchor escrow contract to devnet
+2. Test on-chain reward distribution
+3. Launch token on pump.fun
+4. Point maduro.gg domain to Railway
+
+---
+
+## Smart Contract (Anchor)
+
+### Purpose
+Trustless escrow for reward distribution. Players don't have to trust that rewards will be sent manually - the contract handles it transparently on-chain.
+
+### Contract Location
+`contracts/programs/trumpworm/src/lib.rs`
+
+### Program ID (Devnet)
+`Hqp3bwuxLTJGjsacPzo7Q2bpW9snYyDzxQXq1gY1e9EK`
+
+### Key Functions
+- `initialize` - Create game treasury PDA
+- `register_player` - On-chain player registration
+- `update_stats` - Server updates player scores
+- `distribute_rewards` - Send tokens to top 10 wallets
+- `withdraw` - Admin withdrawal from treasury
+
+### How It Works
+1. Treasury PDA holds prize pool tokens (not personal wallet)
+2. Server calls `distribute_rewards` hourly with top 10 addresses
+3. Contract transfers tokens directly to winners
+4. All distributions visible on Solscan
 
 ---
 

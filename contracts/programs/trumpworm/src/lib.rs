@@ -1,92 +1,78 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-declare_id!("TRUMPworm111111111111111111111111111111111");
+declare_id!("DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF");
+
+/// MADURO.GG - Trustless Prize Pool Escrow
+///
+/// Simple escrow contract for hourly reward distribution:
+/// 1. Treasury PDA holds the prize pool (not a personal wallet)
+/// 2. Server calls distribute_rewards with top 10 wallet addresses
+/// 3. Contract transfers tokens directly - all visible on Solscan
+/// 4. Anyone can deposit to prize pool (from creator fees)
 
 #[program]
 pub mod trumpworm {
     use super::*;
 
-    /// Initialize the game treasury and leaderboard
-    pub fn initialize(ctx: Context<Initialize>, bump: u8) -> Result<()> {
-        let game_state = &mut ctx.accounts.game_state;
-        game_state.authority = ctx.accounts.authority.key();
-        game_state.treasury = ctx.accounts.treasury.key();
-        game_state.token_mint = ctx.accounts.token_mint.key();
-        game_state.total_distributed = 0;
-        game_state.distribution_count = 0;
-        game_state.bump = bump;
+    /// Initialize the prize pool treasury
+    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        let pool = &mut ctx.accounts.prize_pool;
+        pool.authority = ctx.accounts.authority.key();
+        pool.token_mint = ctx.accounts.token_mint.key();
+        pool.total_distributed = 0;
+        pool.distribution_count = 0;
+        pool.bump = ctx.bumps.prize_pool;
 
-        msg!("TRUMPWORM Game State initialized!");
+        msg!("MADURO.GG Prize Pool initialized!");
+        msg!("Authority: {}", pool.authority);
+        msg!("Token: {}", pool.token_mint);
         Ok(())
     }
 
-    /// Register a player (creates on-chain record)
-    pub fn register_player(ctx: Context<RegisterPlayer>, username: String) -> Result<()> {
-        require!(username.len() <= 15, TrumpwormError::UsernameTooLong);
+    /// Deposit tokens into the prize pool (anyone can call)
+    pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+        require!(amount > 0, MaduroError::ZeroAmount);
 
-        let player = &mut ctx.accounts.player_account;
-        player.wallet = ctx.accounts.player.key();
-        player.username = username;
-        player.total_score = 0;
-        player.total_kills = 0;
-        player.games_played = 0;
-        player.rewards_earned = 0;
-        player.registered_at = Clock::get()?.unix_timestamp;
+        let cpi_accounts = Transfer {
+            from: ctx.accounts.depositor_token.to_account_info(),
+            to: ctx.accounts.treasury.to_account_info(),
+            authority: ctx.accounts.depositor.to_account_info(),
+        };
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        token::transfer(CpiContext::new(cpi_program, cpi_accounts), amount)?;
 
-        msg!("Player registered: {}", player.username);
+        msg!("Deposited {} tokens to prize pool", amount);
         Ok(())
     }
 
-    /// Update player stats after a game session
-    pub fn update_stats(
-        ctx: Context<UpdateStats>,
-        score: u64,
-        kills: u32,
-    ) -> Result<()> {
-        let player = &mut ctx.accounts.player_account;
-
-        // Only authority (game server) can update stats
-        require!(
-            ctx.accounts.authority.key() == ctx.accounts.game_state.authority,
-            TrumpwormError::Unauthorized
-        );
-
-        player.total_score = player.total_score.checked_add(score).unwrap();
-        player.total_kills = player.total_kills.checked_add(kills).unwrap();
-        player.games_played = player.games_played.checked_add(1).unwrap();
-
-        msg!("Stats updated for {}: +{} score, +{} kills", player.username, score, kills);
-        Ok(())
-    }
-
-    /// Distribute rewards to top players
+    /// Distribute rewards to top players (authority only)
     /// Called hourly by the game server
     pub fn distribute_rewards(
         ctx: Context<DistributeRewards>,
         amounts: Vec<u64>,
     ) -> Result<()> {
         require!(
-            ctx.accounts.authority.key() == ctx.accounts.game_state.authority,
-            TrumpwormError::Unauthorized
+            ctx.accounts.authority.key() == ctx.accounts.prize_pool.authority,
+            MaduroError::Unauthorized
         );
-        require!(amounts.len() <= 10, TrumpwormError::TooManyRecipients);
+        require!(amounts.len() <= 10, MaduroError::TooManyRecipients);
         require!(
             amounts.len() == ctx.remaining_accounts.len(),
-            TrumpwormError::MismatchedRecipients
+            MaduroError::RecipientMismatch
         );
 
-        let game_state = &mut ctx.accounts.game_state;
+        let pool = &ctx.accounts.prize_pool;
         let seeds = &[
-            b"treasury",
-            game_state.token_mint.as_ref(),
-            &[game_state.bump],
+            b"prize_pool",
+            pool.token_mint.as_ref(),
+            &[pool.bump],
         ];
         let signer = &[&seeds[..]];
 
-        let mut total_distributed: u64 = 0;
+        let mut total: u64 = 0;
 
-        // Distribute to each recipient
+        // Transfer to each recipient
         for (i, amount) in amounts.iter().enumerate() {
             if *amount == 0 {
                 continue;
@@ -99,44 +85,44 @@ pub mod trumpworm {
                 to: recipient.to_account_info(),
                 authority: ctx.accounts.treasury.to_account_info(),
             };
-            let cpi_program = ctx.accounts.token_program.to_account_info();
-            let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
-
+            let cpi_ctx = CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                cpi_accounts,
+                signer,
+            );
             token::transfer(cpi_ctx, *amount)?;
-            total_distributed = total_distributed.checked_add(*amount).unwrap();
 
-            msg!("Distributed {} tokens to recipient {}", amount, i + 1);
+            total = total.checked_add(*amount).unwrap();
+            msg!("Sent {} tokens to player #{}", amount, i + 1);
         }
 
-        game_state.total_distributed = game_state.total_distributed
-            .checked_add(total_distributed)
-            .unwrap();
-        game_state.distribution_count = game_state.distribution_count
-            .checked_add(1)
-            .unwrap();
-        game_state.last_distribution = Clock::get()?.unix_timestamp;
+        // Update stats
+        let pool = &mut ctx.accounts.prize_pool;
+        pool.total_distributed = pool.total_distributed.checked_add(total).unwrap();
+        pool.distribution_count = pool.distribution_count.checked_add(1).unwrap();
+        pool.last_distribution = Clock::get()?.unix_timestamp;
 
-        msg!("Distribution #{} complete: {} tokens to {} players",
-            game_state.distribution_count,
-            total_distributed,
+        msg!(
+            "Distribution #{}: {} tokens to {} players",
+            pool.distribution_count,
+            total,
             amounts.len()
         );
-
         Ok(())
     }
 
-    /// Withdraw tokens from treasury (admin only)
+    /// Emergency withdrawal (authority only)
     pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         require!(
-            ctx.accounts.authority.key() == ctx.accounts.game_state.authority,
-            TrumpwormError::Unauthorized
+            ctx.accounts.authority.key() == ctx.accounts.prize_pool.authority,
+            MaduroError::Unauthorized
         );
 
-        let game_state = &ctx.accounts.game_state;
+        let pool = &ctx.accounts.prize_pool;
         let seeds = &[
-            b"treasury",
-            game_state.token_mint.as_ref(),
-            &[game_state.bump],
+            b"prize_pool",
+            pool.token_mint.as_ref(),
+            &[pool.bump],
         ];
         let signer = &[&seeds[..]];
 
@@ -145,12 +131,28 @@ pub mod trumpworm {
             to: ctx.accounts.destination.to_account_info(),
             authority: ctx.accounts.treasury.to_account_info(),
         };
-        let cpi_program = ctx.accounts.token_program.to_account_info();
-        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
-
+        let cpi_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            cpi_accounts,
+            signer,
+        );
         token::transfer(cpi_ctx, amount)?;
 
-        msg!("Withdrawn {} tokens from treasury", amount);
+        msg!("Emergency withdrawal: {} tokens", amount);
+        Ok(())
+    }
+
+    /// Transfer authority to new wallet
+    pub fn transfer_authority(ctx: Context<TransferAuthority>) -> Result<()> {
+        require!(
+            ctx.accounts.authority.key() == ctx.accounts.prize_pool.authority,
+            MaduroError::Unauthorized
+        );
+
+        let pool = &mut ctx.accounts.prize_pool;
+        pool.authority = ctx.accounts.new_authority.key();
+
+        msg!("Authority transferred to {}", pool.authority);
         Ok(())
     }
 }
@@ -158,16 +160,15 @@ pub mod trumpworm {
 // ============ ACCOUNTS ============
 
 #[derive(Accounts)]
-#[instruction(bump: u8)]
 pub struct Initialize<'info> {
     #[account(
         init,
         payer = authority,
-        space = 8 + GameState::INIT_SPACE,
-        seeds = [b"game_state", token_mint.key().as_ref()],
+        space = 8 + PrizePool::INIT_SPACE,
+        seeds = [b"prize_pool", token_mint.key().as_ref()],
         bump
     )]
-    pub game_state: Account<'info, GameState>,
+    pub prize_pool: Account<'info, PrizePool>,
 
     #[account(
         init,
@@ -179,8 +180,7 @@ pub struct Initialize<'info> {
     )]
     pub treasury: Account<'info, TokenAccount>,
 
-    /// CHECK: Token mint for the game token ($TRUMPWORM)
-    pub token_mint: AccountInfo<'info>,
+    pub token_mint: Account<'info, token::Mint>,
 
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -191,52 +191,39 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
-pub struct RegisterPlayer<'info> {
+pub struct Deposit<'info> {
     #[account(
-        init,
-        payer = player,
-        space = 8 + PlayerAccount::INIT_SPACE,
-        seeds = [b"player", player.key().as_ref()],
-        bump
+        seeds = [b"prize_pool", prize_pool.token_mint.as_ref()],
+        bump = prize_pool.bump,
     )]
-    pub player_account: Account<'info, PlayerAccount>,
-
-    #[account(mut)]
-    pub player: Signer<'info>,
-
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct UpdateStats<'info> {
-    #[account(
-        seeds = [b"game_state", game_state.token_mint.as_ref()],
-        bump = game_state.bump,
-    )]
-    pub game_state: Account<'info, GameState>,
+    pub prize_pool: Account<'info, PrizePool>,
 
     #[account(
         mut,
-        seeds = [b"player", player_account.wallet.as_ref()],
-        bump
+        seeds = [b"treasury", prize_pool.token_mint.as_ref()],
+        bump,
     )]
-    pub player_account: Account<'info, PlayerAccount>,
+    pub treasury: Account<'info, TokenAccount>,
 
-    pub authority: Signer<'info>,
+    #[account(mut)]
+    pub depositor_token: Account<'info, TokenAccount>,
+
+    pub depositor: Signer<'info>,
+    pub token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
 pub struct DistributeRewards<'info> {
     #[account(
         mut,
-        seeds = [b"game_state", game_state.token_mint.as_ref()],
-        bump = game_state.bump,
+        seeds = [b"prize_pool", prize_pool.token_mint.as_ref()],
+        bump = prize_pool.bump,
     )]
-    pub game_state: Account<'info, GameState>,
+    pub prize_pool: Account<'info, PrizePool>,
 
     #[account(
         mut,
-        seeds = [b"treasury", game_state.token_mint.as_ref()],
+        seeds = [b"treasury", prize_pool.token_mint.as_ref()],
         bump,
     )]
     pub treasury: Account<'info, TokenAccount>,
@@ -248,14 +235,14 @@ pub struct DistributeRewards<'info> {
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
     #[account(
-        seeds = [b"game_state", game_state.token_mint.as_ref()],
-        bump = game_state.bump,
+        seeds = [b"prize_pool", prize_pool.token_mint.as_ref()],
+        bump = prize_pool.bump,
     )]
-    pub game_state: Account<'info, GameState>,
+    pub prize_pool: Account<'info, PrizePool>,
 
     #[account(
         mut,
-        seeds = [b"treasury", game_state.token_mint.as_ref()],
+        seeds = [b"treasury", prize_pool.token_mint.as_ref()],
         bump,
     )]
     pub treasury: Account<'info, TokenAccount>,
@@ -267,43 +254,44 @@ pub struct Withdraw<'info> {
     pub token_program: Program<'info, Token>,
 }
 
+#[derive(Accounts)]
+pub struct TransferAuthority<'info> {
+    #[account(
+        mut,
+        seeds = [b"prize_pool", prize_pool.token_mint.as_ref()],
+        bump = prize_pool.bump,
+    )]
+    pub prize_pool: Account<'info, PrizePool>,
+
+    pub authority: Signer<'info>,
+
+    /// CHECK: New authority, just need the pubkey
+    pub new_authority: AccountInfo<'info>,
+}
+
 // ============ STATE ============
 
 #[account]
 #[derive(InitSpace)]
-pub struct GameState {
-    pub authority: Pubkey,          // Game server wallet
-    pub treasury: Pubkey,           // Treasury token account
-    pub token_mint: Pubkey,         // $TRUMPWORM token mint
-    pub total_distributed: u64,     // Total tokens distributed
-    pub distribution_count: u64,    // Number of distributions
-    pub last_distribution: i64,     // Timestamp of last distribution
+pub struct PrizePool {
+    pub authority: Pubkey,          // Server wallet that can distribute
+    pub token_mint: Pubkey,         // $MADURO token mint
+    pub total_distributed: u64,     // Lifetime tokens distributed
+    pub distribution_count: u64,    // Number of hourly distributions
+    pub last_distribution: i64,     // Unix timestamp of last distribution
     pub bump: u8,
-}
-
-#[account]
-#[derive(InitSpace)]
-pub struct PlayerAccount {
-    pub wallet: Pubkey,             // Player's wallet address
-    #[max_len(15)]
-    pub username: String,           // In-game username
-    pub total_score: u64,           // Cumulative score
-    pub total_kills: u32,           // Cumulative kills
-    pub games_played: u32,          // Number of games played
-    pub rewards_earned: u64,        // Total tokens earned
-    pub registered_at: i64,         // Registration timestamp
 }
 
 // ============ ERRORS ============
 
 #[error_code]
-pub enum TrumpwormError {
-    #[msg("Username must be 15 characters or less")]
-    UsernameTooLong,
-    #[msg("Unauthorized: Only game authority can perform this action")]
+pub enum MaduroError {
+    #[msg("Unauthorized: Only authority can perform this action")]
     Unauthorized,
+    #[msg("Cannot deposit zero tokens")]
+    ZeroAmount,
     #[msg("Too many recipients (max 10)")]
     TooManyRecipients,
     #[msg("Number of amounts must match number of recipient accounts")]
-    MismatchedRecipients,
+    RecipientMismatch,
 }

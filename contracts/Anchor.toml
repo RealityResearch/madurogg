@@ -1,12 +1,15 @@
+[toolchain]
+anchor_version = "0.29.0"
+
 [features]
-seeds = false
+resolution = true
 skip-lint = false
 
 [programs.devnet]
-trumpworm = "TRUMPworm111111111111111111111111111111111"
+trumpworm = "Hqp3bwuxLTJGjsacPzo7Q2bpW9snYyDzxQXq1gY1e9EK"
 
 [programs.mainnet]
-trumpworm = "TRUMPworm111111111111111111111111111111111"
+trumpworm = "DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF"
 
 [registry]
 url = "https://api.apr.dev"

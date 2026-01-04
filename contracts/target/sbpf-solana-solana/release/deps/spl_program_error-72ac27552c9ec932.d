@@ -1,0 +1,7 @@
+/Users/mack/Desktop/BRAIN/RESEARCH/wheel/contracts/target/sbpf-solana-solana/release/deps/spl_program_error-72ac27552c9ec932.so: /Users/mack/.cargo/registry/src/index.crates.io-6f17d22bba15001f/spl-program-error-0.4.4/src/lib.rs
+
+/Users/mack/Desktop/BRAIN/RESEARCH/wheel/contracts/target/sbpf-solana-solana/release/deps/libspl_program_error-72ac27552c9ec932.rlib: /Users/mack/.cargo/registry/src/index.crates.io-6f17d22bba15001f/spl-program-error-0.4.4/src/lib.rs
+
+/Users/mack/Desktop/BRAIN/RESEARCH/wheel/contracts/target/sbpf-solana-solana/release/deps/spl_program_error-72ac27552c9ec932.d: /Users/mack/.cargo/registry/src/index.crates.io-6f17d22bba15001f/spl-program-error-0.4.4/src/lib.rs
+
+/Users/mack/.cargo/registry/src/index.crates.io-6f17d22bba15001f/spl-program-error-0.4.4/src/lib.rs:
