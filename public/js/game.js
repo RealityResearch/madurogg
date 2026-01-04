@@ -617,8 +617,8 @@ class Game {
       return;
     }
 
-    // Determine if devnet
-    const isDevnet = true; // Could check from server response
+    // Determine network from distribution data or default to checking totalSent
+    const isDevnet = !dist.distribution || dist.distribution.totalSent < 1;
     const solscanBase = 'https://solscan.io/tx/';
     const solscanSuffix = isDevnet ? '?cluster=devnet' : '';
 

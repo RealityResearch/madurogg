@@ -2,197 +2,213 @@
 
 ## Project Overview
 
-**MADURO.GG** is an Agar.io-style browser multiplayer game where players control cells that consume each other to grow larger. The twist: **you always see yourself as Trump, while all other players appear as Maduro** from your perspective (and vice versa for them). This creates a theatrical "us vs them" dynamic perfect for memecoin virality.
+**MADURO.GG** is an Agar.io-style browser multiplayer game where players control cells that consume each other to grow larger. The twist: **you always see yourself as Trump, while all other players appear as Maduro** from your perspective (and vice versa for them).
 
-### Core Concept
-- **Game**: Multiplayer cell eating game (Agar.io mechanics)
-- **Token**: $MADURO launched on pump.fun
-- **Domain**: maduro.gg
-- **Rewards**: SOL distributed to top players every 10 minutes
-- **Viral Hook**: Trump vs Maduro imagery - everyone is the hero of their own story
-
----
-
-## Current System Architecture
-
-### Game Mode: Continuous Play
-- **No rounds** - Game runs continuously, players drop in/out
-- **50 player cap** - Player 51+ spectates until spot opens
-- **10-minute reward snapshots** - Top players get SOL, game continues
-- **Anti-snowball mechanics** - Aggressive mass decay for large cells, bounty for killing top players
-
-### Wallet Architecture
-| Wallet | Purpose | Location | Security |
-|--------|---------|----------|----------|
-| **Dev Wallet** | Receives pump.fun creator fees | Your Phantom | You control |
-| **Prize Wallet** | Holds SOL for auto-distribution | Keypair in Railway | Hot wallet (limited funds) |
-
-### Reward Flow
-```
-pump.fun trades → 0.3% fee → Your Phantom (dev wallet)
-                                    ↓
-                        You manually transfer 2-3 SOL
-                                    ↓
-                            Prize Wallet (Railway)
-                                    ↓
-                    Server auto-distributes every 10 min
-                                    ↓
-                          Winners receive SOL
-```
+### Core Features
+- **Continuous Play**: No rounds, game runs 24/7
+- **50 Player Arena**: Battle royale style, spectate if full
+- **10-Minute SOL Rewards**: Top players get SOL every 10 minutes
+- **Transparency Dashboard**: All distributions verifiable on Solscan
+- **Anti-Snowball**: Aggressive mass decay, bounty for killing leaders
 
 ---
 
-## Deployment Status
+## 🚀 MAINNET LAUNCH CHECKLIST
 
-### Live URLs
-- **Production:** https://maduro.gg
-- **Railway Direct:** https://madurogg-production.up.railway.app
-- **GitHub:** https://github.com/RealityResearch/madurogg
-
-### Railway Environment Variables (Current)
-| Variable | Value | Description |
-|----------|-------|-------------|
-| `ADMIN_SECRET` | (configured) | Admin API authentication |
-| `TOKEN_MINT` | Test token | Update after launch |
-| `CREATOR_WALLET` | Test wallet | Update after launch |
-| `SOLANA_RPC_URL` | `https://api.devnet.solana.com` | Switch to mainnet after launch |
-| `PRIZE_WALLET_SECRET` | (configured) | Base64 encoded keypair |
-
-### Prize Wallet (Devnet)
-- **Address:** `5DdQNLXojiSZvhViT4zzJyX5KgDeMp6SZWsSPsSkYc6Z`
-- **Balance:** 2 SOL (devnet)
-- **Network:** Devnet (switch to mainnet after launch)
+### Pre-Launch Status
+- [x] Game server running on Railway
+- [x] Devnet SOL distribution tested and working
+- [x] Transparency dashboard live at /stats.html
+- [x] Toast notifications for distributions
+- [x] Distribution history with Solscan TX links
+- [ ] **Mainnet deployment (below)**
 
 ---
 
-## 🚀 POST-LAUNCH CHECKLIST
+### Step 1: Create Token on Pump.fun
+1. Go to https://pump.fun and create $MADURO token
+2. Record these values:
+   ```
+   TOKEN_MINT: ___________________________
+   YOUR_PHANTOM_WALLET: ___________________________
+   ```
+3. Buy some tokens to seed liquidity
 
-### Phase 1: Launch Token on Pump.fun
-1. [ ] Go to pump.fun and create $MADURO token
-2. [ ] Note down:
-   - **Token Mint Address:** `___________________________`
-   - **Your Creator Wallet:** `___________________________`
-3. [ ] Buy some tokens yourself to seed liquidity
+---
 
-### Phase 2: Update Railway Environment Variables
-Go to Railway → Service → Variables → Update:
-
-```env
-TOKEN_MINT=<your-new-token-mint-address>
-CREATOR_WALLET=<your-phantom-wallet-address>
-SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
-```
-
-### Phase 3: Create Mainnet Prize Wallet
+### Step 2: Create Mainnet Prize Wallet
 ```bash
-# On your local machine
+# Delete old devnet wallet (IMPORTANT!)
+rm prize-wallet.json
+
+# Create fresh mainnet wallet
 npm run wallet:create
-# This creates prize-wallet.json
 
-# Note the public key printed (this is your prize wallet address)
-# PRIZE_WALLET_ADDRESS: ___________________________
+# Note the PUBLIC KEY printed - this is your mainnet prize wallet
+# MAINNET_PRIZE_WALLET: ___________________________
 ```
 
-### Phase 4: Generate and Set Prize Wallet Secret
+---
+
+### Step 3: Update Railway Environment Variables
+
+Go to **Railway → madurogg → Variables** and update:
+
+| Variable | Value |
+|----------|-------|
+| `TOKEN_MINT` | Your pump.fun token mint address |
+| `CREATOR_WALLET` | Your Phantom wallet address |
+| `SOLANA_RPC_URL` | `https://api.mainnet-beta.solana.com` |
+| `PRIZE_WALLET_SECRET` | (generate below) |
+
+Generate the prize wallet secret:
 ```bash
-# Generate base64 encoded secret
 cat prize-wallet.json | base64
-
-# Copy the output and add to Railway:
-# PRIZE_WALLET_SECRET=<paste-base64-here>
+# Paste this entire output as PRIZE_WALLET_SECRET
 ```
 
-### Phase 5: Fund Prize Wallet
+---
+
+### Step 4: Fund Prize Wallet
+From your Phantom, send **2-3 SOL** to the new mainnet prize wallet address.
+
 ```bash
-# From your Phantom, send 2-3 SOL to the prize wallet address
-# Or use Solana CLI:
-solana transfer <PRIZE_WALLET_ADDRESS> 2 --url mainnet-beta
+# Or via CLI:
+solana transfer <MAINNET_PRIZE_WALLET> 2 --url mainnet-beta
 ```
 
-### Phase 6: Verify Deployment
-After Railway redeploys, check logs for:
+---
+
+### Step 5: Deploy & Verify
+
+After Railway redeploys, check the logs for:
 ```
-[Solana] Connected to mainnet
-[Solana] Loaded prize wallet from PRIZE_WALLET_SECRET env var
-[Solana] Prize wallet: <your-prize-wallet-address>
+[Solana] Connected to mainnet-beta
+[Solana] Prize wallet: <your-mainnet-prize-wallet>
 [Solana] Balance: 2.0000 SOL
 [Arena] Solana distributor ready for real SOL rewards
 ```
 
-### Phase 7: Test Distribution
+Verify APIs:
 ```bash
-# Force a distribution to verify it works
-curl -X POST https://maduro.gg/api/admin/distribute \
-  -H "Content-Type: application/json" \
-  -d '{"adminSecret": "<your-admin-secret>"}'
+# Check network is mainnet
+curl -s https://maduro.gg/api/transparency | jq '.network'
+# Should return: "mainnet-beta"
+
+# Check prize wallet
+curl -s https://maduro.gg/api/transparency | jq '.prizeWallet'
+# Should return your mainnet prize wallet
 ```
 
-### Phase 8: Verify Frontend
-- [ ] https://maduro.gg shows correct token
-- [ ] Pump.fun link goes to your token
-- [ ] `/api/pump` returns real token stats
-- [ ] Game shows "Next Reward" timer
+---
+
+### Step 6: Test Distribution (Optional)
+```bash
+curl -X POST https://maduro.gg/api/admin/distribute \
+  -H "Content-Type: application/json" \
+  -d '{"adminSecret": "TDAXzQLLmFBK087OmJzPuFttjmIW87L6"}'
+```
+
+---
+
+### Step 7: Final Verification
+- [ ] https://maduro.gg loads correctly
+- [ ] /stats.html shows mainnet prize wallet
+- [ ] Network badge shows "mainnet-beta" (green)
+- [ ] Connect Phantom (mainnet) and join game
+- [ ] Timer counts down to next distribution
+- [ ] After distribution, check Solscan for TX
+
+---
+
+## Live URLs
+
+| URL | Description |
+|-----|-------------|
+| https://maduro.gg | Main game |
+| https://maduro.gg/stats.html | Transparency Dashboard |
+| https://maduro.gg/how.html | How It Works |
+| https://maduro.gg/api/transparency | Public stats API |
+| https://maduro.gg/api/arena | Arena status |
+| https://maduro.gg/api/leaderboard | Current leaderboard |
+| https://maduro.gg/api/distributions | Distribution history |
+
+---
+
+## Admin Commands
+
+### Force Distribution
+```bash
+curl -X POST https://maduro.gg/api/admin/distribute \
+  -H "Content-Type: application/json" \
+  -d '{"adminSecret": "TDAXzQLLmFBK087OmJzPuFttjmIW87L6"}'
+```
+
+### Check Stats
+```bash
+curl "https://maduro.gg/api/admin/stats?adminSecret=TDAXzQLLmFBK087OmJzPuFttjmIW87L6"
+```
+
+### Update Site Config
+```bash
+curl -X POST https://maduro.gg/api/admin/config \
+  -H "Content-Type: application/json" \
+  -d '{
+    "adminSecret": "TDAXzQLLmFBK087OmJzPuFttjmIW87L6",
+    "config": {
+      "tokenMint": "<TOKEN_MINT>",
+      "creatorWallet": "<YOUR_WALLET>",
+      "pumpUrl": "https://pump.fun/coin/<TOKEN_MINT>"
+    }
+  }'
+```
 
 ---
 
 ## Ongoing Operations
 
 ### Refilling Prize Wallet
-When prize wallet runs low:
-1. Check balance: `solana balance <PRIZE_WALLET_ADDRESS> --url mainnet-beta`
-2. From Phantom, send 2-3 SOL to prize wallet
-3. Server will auto-distribute from refilled balance
+When balance runs low:
+1. Check: `curl -s https://maduro.gg/api/transparency | jq '.stats'`
+2. Send 2-3 SOL from Phantom to prize wallet
+3. Server auto-distributes from new balance
 
 ### Monitoring
-- **Check status:** `curl https://maduro.gg/api/arena`
-- **Check Solana status:** `curl https://maduro.gg/api/admin/stats?adminSecret=<secret>`
-- **Force distribution:** `curl -X POST https://maduro.gg/api/admin/distribute -H "Content-Type: application/json" -d '{"adminSecret": "<secret>"}'`
+- **Transparency Dashboard**: https://maduro.gg/stats.html
+- **Railway Logs**: Check for distribution errors
+- **Solscan**: Verify TX history on prize wallet
 
-### If Something Goes Wrong
-1. **Prize wallet empty:** Just refill from Phantom
-2. **Distribution failing:** Check Railway logs for Solana errors
-3. **Server down:** Railway auto-restarts, check deployment status
+### If Something Breaks
+| Issue | Solution |
+|-------|----------|
+| Prize wallet empty | Send more SOL from Phantom |
+| Distribution failing | Check Railway logs for Solana errors |
+| Server down | Railway auto-restarts; check deploy status |
+| Wrong network | Verify SOLANA_RPC_URL in Railway |
 
 ---
 
-## Reward Distribution Details
+## Reward Distribution
 
-### Hybrid Tier System
-| Players Online | Winners | Distribution |
-|----------------|---------|--------------|
+### Tier System
+| Players | Winners | Distribution |
+|---------|---------|--------------|
 | 2-10 | Top 3 | 50% / 30% / 20% |
 | 11-25 | Top 5 | 35% / 25% / 18% / 12% / 10% |
 | 26-50 | Top 10 | 25% / 18% / 14% / 10% / 8% / 7% / 6% / 5% / 4% / 3% |
 
-### Eligibility Requirements
-- Must have wallet connected
-- Must hold 1000+ $MADURO tokens (configurable via `MIN_TOKEN_HOLDING`)
-
-### Distribution Settings
+### Settings
 | Setting | Default | Env Var |
 |---------|---------|---------|
-| Max prize per round | 0.1 SOL | `MAX_PRIZE_PER_ROUND` |
+| Max prize/round | 0.1 SOL | `MAX_PRIZE_PER_ROUND` |
 | Min token holding | 1000 | `MIN_TOKEN_HOLDING` |
-| Distribution interval | 10 minutes | (hardcoded in arena.js) |
+| Min players | 2 | `MIN_PLAYERS_FOR_REWARDS` |
+| Interval | 10 min | Hardcoded |
 
----
-
-## Anti-Snowball Mechanics
-
-### Aggressive Mass Decay
-| Mass Range | Decay Rate |
-|------------|------------|
-| 0-499 | 1x (normal) |
-| 500-999 | 2x |
-| 1000-1999 | 3x |
-| 2000+ | 4x |
-
-### Bounty System
-| Kill Target | Mass Bonus |
-|-------------|------------|
-| #1 Player | +50% of their mass |
-| #2 Player | +30% of their mass |
-| #3 Player | +20% of their mass |
+### Eligibility
+- Wallet must be connected
+- Must hold 1000+ $MADURO tokens (when TOKEN_MINT is set)
+- If TOKEN_MINT is empty, everyone with wallet is eligible (test mode)
 
 ---
 
@@ -200,91 +216,65 @@ When prize wallet runs low:
 
 ```
 /
-├── CLAUDE.md               # This file
+├── CLAUDE.md                    # This file
 ├── package.json
-├── prize-wallet.json       # Prize wallet keypair (DO NOT COMMIT)
+├── prize-wallet.json            # Keypair (DO NOT COMMIT)
 ├── server/
-│   ├── index.js           # Express + Socket.IO + API routes
-│   ├── arena.js           # Continuous game mode + rewards
-│   ├── game.js            # Game state + collisions + bounty
-│   ├── player.js          # Player class + mass decay
-│   ├── solana.js          # SOL distribution module
-│   ├── rewards.js         # Reward tracking
-│   └── pump.js            # Pump.fun API integration
+│   ├── index.js                 # Express + Socket.IO + APIs
+│   ├── arena.js                 # Continuous mode + rewards
+│   ├── game.js                  # Game state + collisions
+│   ├── player.js                # Player class + decay
+│   ├── solana.js                # SOL distribution
+│   ├── rewards.js               # Reward tracking
+│   └── pump.js                  # Pump.fun API
 ├── public/
-│   ├── index.html         # Landing page
-│   ├── game.html          # Game page
+│   ├── index.html               # Landing page
+│   ├── game.html                # Game page
+│   ├── stats.html               # Transparency Dashboard
+│   ├── how.html                 # How It Works
 │   ├── css/
-│   │   ├── style.css      # Landing styles
-│   │   └── game.css       # Game HUD + overlays
+│   │   ├── style.css            # Landing styles
+│   │   └── game.css             # Game HUD + toast + distributions
 │   └── js/
-│       ├── game.js        # Client game + UI
-│       ├── render.js      # Canvas rendering
-│       ├── input.js       # Controls + ESC menu
-│       ├── network.js     # Socket.IO client
-│       ├── wallet.js      # Phantom integration
-│       └── landing.js     # Landing page logic
-├── scripts/
-│   ├── create-prize-wallet.mjs  # Generate new keypair
-│   └── prize-distribution.mjs   # Manual distribution script
-└── contracts/
-    └── programs/trumpworm/      # Anchor contract (for future token distribution)
-```
-
----
-
-## Admin API Reference
-
-### Force Distribution
-```bash
-curl -X POST https://maduro.gg/api/admin/distribute \
-  -H "Content-Type: application/json" \
-  -d '{"adminSecret": "<secret>"}'
-```
-
-### Get Stats
-```bash
-curl "https://maduro.gg/api/admin/stats?adminSecret=<secret>"
-```
-
-### Update Config
-```bash
-curl -X POST https://maduro.gg/api/admin/config \
-  -H "Content-Type: application/json" \
-  -d '{
-    "adminSecret": "<secret>",
-    "config": {
-      "tokenMint": "<address>",
-      "creatorWallet": "<address>",
-      "pumpUrl": "https://pump.fun/coin/<address>"
-    }
-  }'
+│       ├── game.js              # Client game + distribution UI
+│       ├── render.js            # Canvas rendering
+│       ├── input.js             # Controls
+│       ├── network.js           # Socket.IO client
+│       ├── wallet.js            # Phantom integration
+│       └── landing.js           # Landing page
+└── scripts/
+    ├── create-prize-wallet.mjs  # Generate keypair
+    └── prize-distribution.mjs   # Manual distribution
 ```
 
 ---
 
 ## Quick Reference
 
-### Your Credentials (fill in after launch)
+### Credentials
 ```
 ADMIN_SECRET: TDAXzQLLmFBK087OmJzPuFttjmIW87L6
-TOKEN_MINT: ___________________________
-CREATOR_WALLET: ___________________________
-PRIZE_WALLET: 5DdQNLXojiSZvhViT4zzJyX5KgDeMp6SZWsSPsSkYc6Z
 ```
 
-### Important URLs
-- **Game:** https://maduro.gg
-- **Pump.fun:** https://pump.fun/coin/<TOKEN_MINT>
-- **Railway:** https://railway.app (check logs)
-- **Prize Wallet on Solscan:** https://solscan.io/account/<PRIZE_WALLET>
+### After Launch - Fill In:
+```
+TOKEN_MINT: ___________________________
+CREATOR_WALLET: ___________________________
+PRIZE_WALLET (mainnet): ___________________________
+```
+
+### Key URLs
+- **Game**: https://maduro.gg
+- **Transparency**: https://maduro.gg/stats.html
+- **GitHub**: https://github.com/RealityResearch/madurogg
+- **Railway**: https://railway.app
 
 ---
 
-## Development Notes
+## Technical Notes
 
-1. **Continuous mode** - No rounds, game always running
-2. **Server-side authoritative** - Prevents cheating
-3. **60 tick rate** - Smooth gameplay
-4. **Hot wallet risk** - Only keep 2-3 SOL in prize wallet at a time
-5. **Token requirement** - Winners must hold $MADURO to receive SOL
+1. **Distribution Method**: Direct SOL transfer via SystemProgram (not Anchor contract)
+2. **Server Authoritative**: All game logic server-side to prevent cheating
+3. **60 Hz Tick Rate**: Smooth gameplay with interpolation
+4. **Hot Wallet Risk**: Only keep 2-3 SOL in prize wallet at a time
+5. **Network Detection**: Client auto-detects devnet/mainnet from /api/transparency
