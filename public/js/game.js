@@ -778,11 +778,19 @@ class Game {
       }
 
       timerEl.textContent = timeStr;
+
+      // Also update the HUD reward countdown
+      if (this.rewardCountdown) {
+        this.rewardCountdown.textContent = timeStr;
+      }
+
       // Change color as reward approaches
       if (timeUntilReward < 60000) {
         timerEl.style.color = '#FFD700'; // Gold when close
+        if (this.rewardCountdown) this.rewardCountdown.style.color = '#FFD700';
       } else {
         timerEl.style.color = '#00ff00'; // Green normally
+        if (this.rewardCountdown) this.rewardCountdown.style.color = '';
       }
 
       // Also update arena info from state
