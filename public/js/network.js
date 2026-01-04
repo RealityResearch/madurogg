@@ -3,11 +3,17 @@ class NetworkManager {
   constructor() {
     this.socket = null;
     this.playerId = null;
+    this.roomId = null;
     this.connected = false;
     this.onStateUpdate = null;
     this.onLeaderboardUpdate = null;
     this.onJoined = null;
     this.onKill = null;
+    this.onRoundCountdown = null;
+    this.onRoundStart = null;
+    this.onRoundEnd = null;
+    this.onWaitingForPlayers = null;
+    this.onRoomList = null;
   }
 
   connect() {
@@ -47,6 +53,8 @@ class NetworkManager {
       // Joined confirmation
       this.socket.on('joined', (data) => {
         this.playerId = data.id;
+        this.roomId = data.roomId;
+        this.roomConfig = data.config;
         if (this.onJoined) {
           this.onJoined(data);
         }
@@ -58,12 +66,50 @@ class NetworkManager {
           this.onKill(data);
         }
       });
+
+      // Room list
+      this.socket.on('roomList', (data) => {
+        if (this.onRoomList) {
+          this.onRoomList(data);
+        }
+      });
+
+      // Battle Royale events
+      this.socket.on('roundCountdown', (data) => {
+        if (this.onRoundCountdown) {
+          this.onRoundCountdown(data);
+        }
+      });
+
+      this.socket.on('roundStart', (data) => {
+        if (this.onRoundStart) {
+          this.onRoundStart(data);
+        }
+      });
+
+      this.socket.on('roundEnd', (data) => {
+        if (this.onRoundEnd) {
+          this.onRoundEnd(data);
+        }
+      });
+
+      this.socket.on('waitingForPlayers', (data) => {
+        if (this.onWaitingForPlayers) {
+          this.onWaitingForPlayers(data);
+        }
+      });
     });
   }
 
-  join(username, wallet) {
+  join(username, wallet, roomId = null) {
     if (this.socket && this.connected) {
-      this.socket.emit('join', { username, wallet });
+      this.socket.emit('join', { username, wallet, roomId });
+    }
+  }
+
+  getRooms() {
+    if (this.socket && this.connected) {
+      this.socket.emit('getRooms');
     }
   }
 

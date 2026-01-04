@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const Game = require('./game');
+const { RoomManager } = require('./room');
 const RewardManager = require('./rewards');
 
 const app = express();
@@ -20,8 +21,8 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Game and reward instances
-const game = new Game();
+// Reward manager instance (created before RoomManager)
+let rewards; // Will be initialized after TOKEN_CONFIG
 
 // Token Configuration
 const TOKEN_CONFIG = {
@@ -61,7 +62,7 @@ async function getTokenPrice(tokenAddress) {
   }
 }
 
-const rewards = new RewardManager({
+rewards = new RewardManager({
   tokenMint: TOKEN_CONFIG.mint,
   creatorWallet: TOKEN_CONFIG.creator,
   adminSecret: process.env.ADMIN_SECRET,
@@ -69,6 +70,9 @@ const rewards = new RewardManager({
   tokenSupply: TOKEN_CONFIG.supply,
   creatorFeeRate: TOKEN_CONFIG.creatorFeeRate
 });
+
+// Room manager (handles multiple game rooms with battle royale)
+const roomManager = new RoomManager(io, rewards);
 
 if (!process.env.ADMIN_SECRET) {
   console.warn('\n⚠️  WARNING: ADMIN_SECRET not set! Admin endpoints will be disabled.');
@@ -90,72 +94,75 @@ if (process.env.INITIAL_POOL) {
 io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
 
-  // Get player count
-  socket.on('getPlayerCount', () => {
-    socket.emit('playerCount', game.players.size);
+  // Get room list for lobby
+  socket.on('getRooms', () => {
+    socket.emit('roomList', roomManager.getRoomList());
   });
 
-  // Player joins with username and wallet
+  // Get player count (total across all rooms)
+  socket.on('getPlayerCount', () => {
+    const total = roomManager.getRoomList().reduce((sum, r) => sum + r.players, 0);
+    socket.emit('playerCount', total);
+  });
+
+  // Player joins with username and wallet (auto-assign room or specific room)
   socket.on('join', (data) => {
-    const player = game.addPlayer(socket.id, data.username, data.wallet);
-    socket.emit('joined', {
-      id: socket.id,
-      player,
-      worldSize: game.worldSize
-    });
-    console.log(`${data.username} joined the game`);
+    const result = roomManager.joinRoom(socket, data.username, data.wallet, data.roomId);
+
+    if (result.success) {
+      socket.emit('joined', {
+        id: socket.id,
+        player: result.player,
+        worldSize: result.worldSize,
+        roomId: result.roomId,
+        state: result.state,
+        timeRemaining: result.timeRemaining,
+        roundNumber: result.roundNumber,
+        config: RoomManager.CONFIG
+      });
+      console.log(`${data.username} joined ${result.roomId}`);
+    } else {
+      socket.emit('joinError', { error: result.error });
+    }
   });
 
   // Player input
   socket.on('input', (data) => {
-    game.handleInput(socket.id, data);
+    roomManager.handleInput(socket.id, data);
   });
 
   // Player split
   socket.on('split', () => {
-    game.splitPlayer(socket.id);
+    roomManager.splitPlayer(socket.id);
   });
 
   // Player eject mass
   socket.on('eject', () => {
-    game.ejectMass(socket.id);
+    roomManager.ejectMass(socket.id);
   });
 
   // Disconnect
   socket.on('disconnect', () => {
-    game.removePlayer(socket.id);
+    roomManager.leaveRoom(socket.id);
     console.log(`Player disconnected: ${socket.id}`);
   });
 });
 
-// Game loop - 60 ticks per second
-const TICK_RATE = 1000 / 60;
-setInterval(() => {
-  game.update();
-
-  // Broadcast kill events
-  const killEvents = game.getKillEvents();
-  for (const kill of killEvents) {
-    io.emit('kill', kill);
-    console.log(`${kill.killer} ate ${kill.victim}!`);
-  }
-
-  // Broadcast game state to all players
-  const state = game.getState();
-  io.emit('state', state);
-}, TICK_RATE);
-
-// Leaderboard broadcast - every second
-setInterval(() => {
-  const leaderboard = game.getLeaderboard();
-  io.emit('leaderboard', leaderboard);
-}, 1000);
+// Game loop is handled by RoomManager internally
+// Each room updates at 60 ticks/sec and broadcasts to its players
 
 // ============ API ENDPOINTS ============
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', players: game.players.size });
+  const rooms = roomManager.getRoomList();
+  const totalPlayers = rooms.reduce((sum, r) => sum + r.players, 0);
+  res.json({
+    status: 'ok',
+    players: totalPlayers,
+    rooms: rooms.length,
+    roomDetails: rooms
+  });
 });
 
 // Get token info (for frontend) - uses Moralis API
@@ -263,9 +270,29 @@ app.post('/api/claim', (req, res) => {
   res.json(result);
 });
 
-// Get leaderboard (public API)
+// Get leaderboard (public API) - returns all rooms' leaderboards
 app.get('/api/leaderboard', (req, res) => {
-  res.json(game.getLeaderboard());
+  const { roomId } = req.query;
+  if (roomId) {
+    const room = roomManager.rooms.get(roomId);
+    if (room) {
+      res.json({ roomId, leaderboard: room.getLeaderboard() });
+    } else {
+      res.status(404).json({ error: 'Room not found' });
+    }
+  } else {
+    // Return all rooms' leaderboards
+    const allLeaderboards = {};
+    for (const [id, room] of roomManager.rooms) {
+      allLeaderboards[id] = room.getLeaderboard();
+    }
+    res.json(allLeaderboards);
+  }
+});
+
+// Get room list
+app.get('/api/rooms', (req, res) => {
+  res.json(roomManager.getRoomList());
 });
 
 // ============ ADMIN ENDPOINTS ============
@@ -298,22 +325,29 @@ app.get('/api/admin/stats', (req, res) => {
   res.json(result);
 });
 
-// Admin: Force reward distribution
+// Admin: Force reward distribution (for specific room)
 app.post('/api/admin/distribute', (req, res) => {
-  const { adminSecret } = req.body;
-  const leaderboard = game.getLeaderboard();
-  const result = rewards.forceDistribution(leaderboard, adminSecret);
+  const { adminSecret, roomId } = req.body;
 
-  if (!result) {
-    return res.status(400).json({ error: 'No rewards to distribute or no players' });
-  }
-  if (result.error) {
-    return res.status(403).json(result);
+  if (!rewards.validateAdmin(adminSecret)) {
+    return res.status(403).json({ error: 'Invalid admin secret' });
   }
 
-  // Broadcast to all players
-  io.emit('rewardDistribution', result);
-  res.json(result);
+  if (roomId) {
+    const room = roomManager.rooms.get(roomId);
+    if (!room) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+    // Force end the current round
+    if (room.state === 'playing') {
+      room.endRound();
+      res.json({ success: true, message: `Forced round end for ${roomId}` });
+    } else {
+      res.json({ success: false, message: 'Room not in playing state' });
+    }
+  } else {
+    res.status(400).json({ error: 'roomId required' });
+  }
 });
 
 // Admin: Configure reward manager
@@ -353,18 +387,8 @@ app.post('/api/admin/fee', (req, res) => {
 });
 
 // ============ REWARD DISTRIBUTION ============
-
-// Hourly reward distribution
-setInterval(() => {
-  const leaderboard = game.getLeaderboard();
-  const snapshot = rewards.distributeRewards(leaderboard);
-
-  if (snapshot) {
-    // Broadcast distribution event to all players
-    io.emit('rewardDistribution', snapshot);
-    console.log('Hourly rewards distributed:', snapshot.distributions.length, 'players');
-  }
-}, 60 * 60 * 1000); // Every hour
+// Battle Royale mode: Rewards are distributed per room when each round ends
+// The Room class handles calling the smart contract for winner payouts
 
 // ============ START SERVER ============
 

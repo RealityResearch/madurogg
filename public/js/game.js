@@ -7,10 +7,17 @@ class Game {
     this.state = null;
     this.prevState = null;
     this.selfId = null;
+    this.roomId = null;
     this.worldSize = 3000;
     this.playerData = null;
     this.leaderboard = [];
     this.isPlaying = false;
+
+    // Battle Royale state
+    this.roundState = 'waiting'; // waiting, countdown, playing, ended
+    this.roundNumber = 0;
+    this.roundTimeRemaining = 0;
+    this.roundConfig = null;
 
     // Interpolation
     this.lastUpdateTime = 0;
@@ -68,6 +75,12 @@ class Game {
       window.networkManager.onJoined = (data) => this.onJoined(data);
       window.networkManager.onKill = (data) => this.onKill(data);
 
+      // Battle Royale callbacks
+      window.networkManager.onRoundCountdown = (data) => this.onRoundCountdown(data);
+      window.networkManager.onRoundStart = (data) => this.onRoundStart(data);
+      window.networkManager.onRoundEnd = (data) => this.onRoundEnd(data);
+      window.networkManager.onWaitingForPlayers = (data) => this.onWaitingForPlayers(data);
+
       // Join the game
       window.networkManager.join(this.playerData.username, this.playerData.wallet);
 
@@ -79,8 +92,7 @@ class Game {
         this.walletDisplay.textContent = 'Not connected';
       }
 
-      // Start reward countdown
-      this.startRewardCountdown();
+      // Round timer is started in onJoined
 
       // Start game loop
       this.lastFrameTime = performance.now();
@@ -98,12 +110,129 @@ class Game {
   onJoined(data) {
     console.log('Joined game:', data);
     this.selfId = data.id;
+    this.roomId = data.roomId;
     this.worldSize = data.worldSize;
     this.renderer.worldSize = this.worldSize;
+    this.roundConfig = data.config;
+    this.roundState = data.state;
+    this.roundNumber = data.roundNumber;
+    this.roundTimeRemaining = data.timeRemaining;
     this.isPlaying = true;
 
     // Hide loading screen
     this.loadingScreen.classList.add('hidden');
+
+    // Update round timer display
+    this.updateRoundTimer();
+  }
+
+  onRoundCountdown(data) {
+    console.log('Round countdown:', data);
+    this.roundState = 'countdown';
+    this.roundNumber = data.roundNumber;
+    this.roundTimeRemaining = data.duration;
+    this.showAnnouncement(`Round ${data.roundNumber} starting...`, 'countdown');
+  }
+
+  onRoundStart(data) {
+    console.log('Round started:', data);
+    this.roundState = 'playing';
+    this.roundNumber = data.roundNumber;
+    this.roundTimeRemaining = data.duration;
+    this.showAnnouncement(`ROUND ${data.roundNumber} - FIGHT!`, 'start');
+  }
+
+  onRoundEnd(data) {
+    console.log('Round ended:', data);
+    this.roundState = 'ended';
+
+    if (data.winner) {
+      const isMe = data.winner.wallet && this.playerData.wallet &&
+        data.winner.wallet.includes(this.playerData.wallet.slice(-4));
+      if (isMe) {
+        this.showAnnouncement(`🏆 YOU WON! +${data.prizeAwarded} tokens`, 'winner');
+      } else {
+        this.showAnnouncement(`${data.winner.username} wins!`, 'end');
+      }
+    } else {
+      this.showAnnouncement('Round ended - No winner', 'end');
+    }
+
+    // Show next round countdown
+    setTimeout(() => {
+      this.showAnnouncement(`Next round in ${Math.ceil(data.nextRoundIn / 1000)}s...`, 'waiting');
+    }, 3000);
+  }
+
+  onWaitingForPlayers(data) {
+    console.log('Waiting for players:', data);
+    this.roundState = 'waiting';
+    this.showAnnouncement(`Waiting for players... (${data.current}/${data.required})`, 'waiting');
+  }
+
+  showAnnouncement(text, type) {
+    // Create or get announcement element
+    let ann = document.getElementById('round-announcement');
+    if (!ann) {
+      ann = document.createElement('div');
+      ann.id = 'round-announcement';
+      ann.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 48px;
+        font-weight: bold;
+        color: white;
+        text-shadow: 0 0 20px rgba(0,0,0,0.8);
+        z-index: 1000;
+        pointer-events: none;
+        transition: opacity 0.5s;
+      `;
+      document.body.appendChild(ann);
+    }
+
+    ann.textContent = text;
+    ann.style.opacity = '1';
+
+    // Color based on type
+    if (type === 'winner') {
+      ann.style.color = '#FFD700';
+    } else if (type === 'start') {
+      ann.style.color = '#ff4444';
+    } else {
+      ann.style.color = 'white';
+    }
+
+    // Fade out after 3 seconds
+    setTimeout(() => {
+      ann.style.opacity = '0';
+    }, 3000);
+  }
+
+  updateRoundTimer() {
+    // Update every second
+    setInterval(() => {
+      if (this.state && this.state.timeRemaining !== undefined) {
+        this.roundTimeRemaining = this.state.timeRemaining;
+      }
+
+      const minutes = Math.floor(this.roundTimeRemaining / 60000);
+      const seconds = Math.floor((this.roundTimeRemaining % 60000) / 1000);
+      const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+      // Update the countdown display
+      if (this.roundState === 'playing') {
+        this.rewardCountdown.textContent = timeStr;
+        this.rewardCountdown.style.color = this.roundTimeRemaining < 60000 ? '#ff4444' : 'white';
+      } else if (this.roundState === 'countdown') {
+        this.rewardCountdown.textContent = `Starting: ${seconds}s`;
+        this.rewardCountdown.style.color = '#ffcc00';
+      } else {
+        this.rewardCountdown.textContent = 'Waiting...';
+        this.rewardCountdown.style.color = '#888';
+      }
+    }, 100);
   }
 
   onStateUpdate(state) {
@@ -280,18 +409,6 @@ class Game {
     }, 33); // ~30fps for network
   }
 
-  startRewardCountdown() {
-    const updateCountdown = () => {
-      const now = new Date();
-      const minutes = 59 - now.getMinutes();
-      const seconds = 59 - now.getSeconds();
-      this.rewardCountdown.textContent =
-        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    };
-
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
-  }
 
   gameLoop(currentTime) {
     const dt = (currentTime - this.lastFrameTime) / 1000;
