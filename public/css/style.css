@@ -176,7 +176,48 @@ body {
 .tagline {
   font-size: 1rem;
   color: var(--text-secondary);
-  margin-bottom: 40px;
+  margin-bottom: 20px;
+}
+
+/* CA Display */
+.ca-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 30px;
+  padding: 10px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.ca-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.ca-address {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--accent-green);
+  cursor: pointer;
+  user-select: all;
+}
+
+.ca-copy {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 6px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.ca-copy:hover {
+  opacity: 1;
 }
 
 /* Join Box */

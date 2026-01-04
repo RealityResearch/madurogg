@@ -10,6 +10,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const trades24hEl = document.getElementById('trades-24h');
   const holdersEl = document.getElementById('holders');
   const solPriceEl = document.getElementById('sol-price');
+  const caAddress = document.getElementById('ca-address');
+  const caCopy = document.getElementById('ca-copy');
+
+  // Copy CA to clipboard
+  function copyCA() {
+    const ca = caAddress.textContent;
+    navigator.clipboard.writeText(ca).then(() => {
+      caCopy.textContent = '✓';
+      setTimeout(() => { caCopy.textContent = '📋'; }, 1500);
+    });
+  }
+  if (caAddress) caAddress.addEventListener('click', copyCA);
+  if (caCopy) caCopy.addEventListener('click', copyCA);
 
   // Socket connection
   const socket = io();
