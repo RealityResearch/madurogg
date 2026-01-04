@@ -599,3 +599,267 @@ body {
     display: none;
   }
 }
+
+/* ============ ARENA INFO DISPLAY ============ */
+#arena-info {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(10, 10, 10, 0.95);
+  padding: 15px 20px;
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent-primary);
+  min-width: 140px;
+}
+
+.arena-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+}
+
+.arena-stat .label {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+}
+
+.arena-stat span:last-child {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.arena-stat.timer {
+  margin-top: 5px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+#arena-timer {
+  font-size: 1.5rem;
+  color: var(--accent-primary);
+  width: 100%;
+  text-align: center;
+}
+
+/* ============ MODALS & OVERLAYS ============ */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 50px 60px;
+  text-align: center;
+  max-width: 400px;
+}
+
+.modal-content h2 {
+  font-size: 2rem;
+  color: var(--accent-primary);
+  margin-bottom: 15px;
+  letter-spacing: 3px;
+}
+
+.modal-content p {
+  color: var(--text-secondary);
+  margin-bottom: 30px;
+  font-size: 1rem;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.btn-primary {
+  padding: 15px 35px;
+  background: var(--accent-primary);
+  color: var(--bg-primary);
+  border: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #00cc6a;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  padding: 15px 35px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+/* Status overlays (queue, spectator) */
+.status-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(10, 10, 10, 0.95);
+  border: 1px solid var(--border-color);
+  padding: 30px 50px;
+  text-align: center;
+  z-index: 500;
+  min-width: 280px;
+}
+
+.status-overlay.hidden {
+  display: none;
+}
+
+.overlay-content h2 {
+  font-size: 1.2rem;
+  color: var(--accent-primary);
+  margin-bottom: 10px;
+  letter-spacing: 3px;
+}
+
+.overlay-content p {
+  color: var(--text-secondary);
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+}
+
+.overlay-content .subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+#queue-position {
+  color: var(--accent-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+#spectator-overlay {
+  border-left: 3px solid var(--accent-warning);
+}
+
+#spectator-overlay h2 {
+  color: var(--accent-warning);
+}
+
+#spectator-overlay .btn-primary {
+  margin-top: 10px;
+  padding: 12px 25px;
+  font-size: 0.75rem;
+}
+
+/* ============ LEADERBOARD TOP 3 HIGHLIGHT ============ */
+#leaderboard-list li.winner {
+  position: relative;
+}
+
+#leaderboard-list li.first {
+  color: #FFD700;
+}
+
+#leaderboard-list li.first .rank {
+  color: #FFD700;
+}
+
+#leaderboard-list li.second {
+  color: #C0C0C0;
+}
+
+#leaderboard-list li.second .rank {
+  color: #C0C0C0;
+}
+
+#leaderboard-list li.third {
+  color: #CD7F32;
+}
+
+#leaderboard-list li.third .rank {
+  color: #CD7F32;
+}
+
+/* ============ MOBILE ADJUSTMENTS ============ */
+@media (max-width: 768px) {
+  #arena-info {
+    bottom: auto;
+    top: 100px;
+    left: 10px;
+    padding: 10px 15px;
+    min-width: 110px;
+  }
+
+  .arena-stat {
+    font-size: 0.7rem;
+  }
+
+  .arena-stat .label {
+    font-size: 0.55rem;
+  }
+
+  #arena-timer {
+    font-size: 1.2rem;
+  }
+
+  .modal-content {
+    padding: 30px 40px;
+    margin: 20px;
+  }
+
+  .modal-content h2 {
+    font-size: 1.5rem;
+  }
+
+  .modal-buttons {
+    flex-direction: column;
+  }
+
+  .status-overlay {
+    width: 90%;
+    max-width: 300px;
+    padding: 20px 30px;
+  }
+
+  .overlay-content h2 {
+    font-size: 1rem;
+  }
+
+  .overlay-content p {
+    font-size: 0.8rem;
+  }
+}

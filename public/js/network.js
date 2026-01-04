@@ -1,10 +1,12 @@
-// Network Manager - Socket.IO Client
+// Network Manager - Socket.IO Client for Arena System
 class NetworkManager {
   constructor() {
     this.socket = null;
     this.playerId = null;
-    this.roomId = null;
     this.connected = false;
+    this.mode = null; // 'arena', 'queue', 'spectator'
+
+    // Callbacks
     this.onStateUpdate = null;
     this.onLeaderboardUpdate = null;
     this.onJoined = null;
@@ -13,7 +15,14 @@ class NetworkManager {
     this.onRoundStart = null;
     this.onRoundEnd = null;
     this.onWaitingForPlayers = null;
-    this.onRoomList = null;
+
+    // Arena-specific callbacks
+    this.onArenaUpdate = null;
+    this.onQueuePosition = null;
+    this.onPromoted = null;
+    this.onEliminated = null;
+    this.onRoundEndPrompt = null;
+    this.onRequeued = null;
   }
 
   connect() {
@@ -53,24 +62,23 @@ class NetworkManager {
       // Joined confirmation
       this.socket.on('joined', (data) => {
         this.playerId = data.id;
-        this.roomId = data.roomId;
-        this.roomConfig = data.config;
+        this.mode = data.mode;
+        this.arenaConfig = data.config;
         if (this.onJoined) {
           this.onJoined(data);
         }
+      });
+
+      // Join error
+      this.socket.on('joinError', (data) => {
+        console.error('Join error:', data.error);
+        alert('Failed to join: ' + data.error);
       });
 
       // Kill events
       this.socket.on('kill', (data) => {
         if (this.onKill) {
           this.onKill(data);
-        }
-      });
-
-      // Room list
-      this.socket.on('roomList', (data) => {
-        if (this.onRoomList) {
-          this.onRoomList(data);
         }
       });
 
@@ -98,37 +106,91 @@ class NetworkManager {
           this.onWaitingForPlayers(data);
         }
       });
+
+      // Arena-specific events
+      this.socket.on('arenaUpdate', (data) => {
+        if (this.onArenaUpdate) {
+          this.onArenaUpdate(data);
+        }
+      });
+
+      this.socket.on('queuePosition', (data) => {
+        if (this.onQueuePosition) {
+          this.onQueuePosition(data);
+        }
+      });
+
+      this.socket.on('promoted', (data) => {
+        this.mode = 'arena';
+        if (this.onPromoted) {
+          this.onPromoted(data);
+        }
+      });
+
+      this.socket.on('eliminated', (data) => {
+        this.mode = 'spectator';
+        if (this.onEliminated) {
+          this.onEliminated(data);
+        }
+      });
+
+      this.socket.on('roundEndPrompt', (data) => {
+        if (this.onRoundEndPrompt) {
+          this.onRoundEndPrompt(data);
+        }
+      });
+
+      this.socket.on('requeued', (data) => {
+        this.mode = 'queue';
+        if (this.onRequeued) {
+          this.onRequeued(data);
+        }
+      });
+
+      this.socket.on('queueUpdate', (data) => {
+        // Broadcast queue size change
+        if (this.onArenaUpdate) {
+          this.onArenaUpdate(data);
+        }
+      });
     });
   }
 
-  join(username, wallet, roomId = null) {
+  join(username, wallet) {
     if (this.socket && this.connected) {
-      this.socket.emit('join', { username, wallet, roomId });
+      this.socket.emit('join', { username, wallet });
     }
   }
 
-  getRooms() {
+  getArenaInfo() {
     if (this.socket && this.connected) {
-      this.socket.emit('getRooms');
+      this.socket.emit('getArenaInfo');
     }
   }
 
   // Direction-based input (-1 to 1 for x and y)
   sendInput(dirX, dirY) {
-    if (this.socket && this.connected) {
+    if (this.socket && this.connected && this.mode === 'arena') {
       this.socket.emit('input', { dirX, dirY });
     }
   }
 
   split() {
-    if (this.socket && this.connected) {
+    if (this.socket && this.connected && this.mode === 'arena') {
       this.socket.emit('split');
     }
   }
 
   eject() {
-    if (this.socket && this.connected) {
+    if (this.socket && this.connected && this.mode === 'arena') {
       this.socket.emit('eject');
+    }
+  }
+
+  // Request to re-queue from spectator mode
+  requeue() {
+    if (this.socket && this.connected) {
+      this.socket.emit('requeue');
     }
   }
 

@@ -8,7 +8,11 @@
   },
   "scripts": {
     "start": "node server/index.js",
-    "dev": "nodemon server/index.js"
+    "dev": "nodemon server/index.js",
+    "prizes": "node scripts/prize-distribution.mjs",
+    "prizes:dry": "node scripts/prize-distribution.mjs --dry-run",
+    "prizes:daemon": "node scripts/prize-distribution.mjs --daemon",
+    "wallet:create": "node scripts/create-prize-wallet.mjs"
   },
   "keywords": [
     "solana",

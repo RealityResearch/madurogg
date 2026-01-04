@@ -8,7 +8,7 @@
 - **Game**: Multiplayer cell eating game (Agar.io mechanics)
 - **Token**: $MADURO launched on pump.fun
 - **Domain**: maduro.gg
-- **Rewards**: Creator fees (0.3%) distributed to top players hourly via on-chain escrow
+- **Rewards**: SOL distributed to top players who hold $MADURO tokens
 - **Viral Hook**: Trump vs Maduro imagery - everyone is the hero of their own story
 
 ---
@@ -55,12 +55,48 @@
 
 ### Remaining TODOs
 - [ ] Launch real $MADURO token on pump.fun
-- [ ] Initialize prize pool on devnet with test token
-- [ ] Test full reward distribution flow on devnet
-- [ ] Deploy contract to mainnet
-- [ ] Initialize mainnet prize pool
+- [ ] Create prize wallet: `npm run wallet:create`
+- [ ] Fund prize wallet with SOL
+- [ ] Start prize daemon: `npm run prizes:daemon`
 - [ ] Update Railway env vars with real token
 - [ ] Verify pump stats show real token data
+
+---
+
+## SOL Prize Distribution
+
+See `PRIZE_DISTRIBUTION.md` for full documentation.
+
+### How It Works
+1. Creator fees come to dev wallet as **SOL** (0.3% of pump.fun trades)
+2. Fund a separate **prize wallet** with SOL
+3. Prize script distributes **SOL to winners** who hold $MADURO tokens
+4. Winners must hold **1000+ $MADURO** to be eligible
+
+### Quick Commands
+```bash
+npm run wallet:create     # Create prize wallet keypair
+npm run prizes:dry        # Test distribution (no transactions)
+npm run prizes            # Run single distribution
+npm run prizes:daemon     # Run continuous (hourly)
+```
+
+### Configuration
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TOKEN_MINT` | - | $MADURO token address |
+| `PRIZE_WALLET_PATH` | ./prize-wallet.json | Prize wallet keypair |
+| `DISTRIBUTION_PERCENT` | 50% | % of wallet to distribute |
+| `MIN_TOKEN_HOLDING` | 1000 | Min $MADURO to be eligible |
+
+### Reward Distribution
+| Rank | Share |
+|------|-------|
+| 1st  | 30%   |
+| 2nd  | 20%   |
+| 3rd  | 15%   |
+| 4th  | 10%   |
+| 5-10 | 2-8%  |
 
 ---
 

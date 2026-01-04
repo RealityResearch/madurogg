@@ -3,7 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const Game = require('./game');
-const { RoomManager } = require('./room');
+const Arena = require('./arena');
 const RewardManager = require('./rewards');
 const { PumpAPI } = require('./pump');
 
@@ -92,8 +92,23 @@ rewards = new RewardManager({
   creatorFeeRate: TOKEN_CONFIG.creatorFeeRate
 });
 
-// Room manager (handles multiple game rooms with battle royale)
-const roomManager = new RoomManager(io, rewards);
+// Single arena (one game, queue system, spectators)
+const arena = new Arena(io, rewards);
+
+// Start arena game loop
+const TICK_RATE = 1000 / 60;
+setInterval(() => {
+  arena.update();
+  const state = arena.getState();
+  io.to('arena').emit('state', state);
+  io.to('spectators').emit('state', state); // Spectators see the game too
+}, TICK_RATE);
+
+// Leaderboard broadcast every second
+setInterval(() => {
+  const leaderboard = arena.getLeaderboard();
+  arena.broadcast('leaderboard', leaderboard);
+}, 1000);
 
 if (!process.env.ADMIN_SECRET) {
   console.warn('\n⚠️  WARNING: ADMIN_SECRET not set! Admin endpoints will be disabled.');
@@ -115,33 +130,34 @@ if (process.env.INITIAL_POOL) {
 io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
 
-  // Get room list for lobby
-  socket.on('getRooms', () => {
-    socket.emit('roomList', roomManager.getRoomList());
+  // Get arena info for lobby
+  socket.on('getArenaInfo', () => {
+    socket.emit('arenaInfo', arena.getInfo());
   });
 
-  // Get player count (total across all rooms)
+  // Get player count
   socket.on('getPlayerCount', () => {
-    const total = roomManager.getRoomList().reduce((sum, r) => sum + r.players, 0);
-    socket.emit('playerCount', total);
+    const info = arena.getInfo();
+    socket.emit('playerCount', info.players + info.queue + info.spectators);
   });
 
-  // Player joins with username and wallet (auto-assign room or specific room)
+  // Player joins with username and wallet
   socket.on('join', (data) => {
-    const result = roomManager.joinRoom(socket, data.username, data.wallet, data.roomId);
+    const result = arena.joinGame(socket, data.username, data.wallet);
 
     if (result.success) {
       socket.emit('joined', {
         id: socket.id,
+        mode: result.mode, // 'arena', 'queue', or 'spectator'
         player: result.player,
         worldSize: result.worldSize,
-        roomId: result.roomId,
+        position: result.position, // queue position if queued
         state: result.state,
         timeRemaining: result.timeRemaining,
         roundNumber: result.roundNumber,
-        config: RoomManager.CONFIG
+        config: Arena.CONFIG
       });
-      console.log(`${data.username} joined ${result.roomId}`);
+      console.log(`${data.username} joined as ${result.mode}`);
     } else {
       socket.emit('joinError', { error: result.error });
     }
@@ -149,40 +165,51 @@ io.on('connection', (socket) => {
 
   // Player input
   socket.on('input', (data) => {
-    roomManager.handleInput(socket.id, data);
+    arena.handleInput(socket.id, data);
   });
 
   // Player split
   socket.on('split', () => {
-    roomManager.splitPlayer(socket.id);
+    arena.splitPlayer(socket.id);
   });
 
   // Player eject mass
   socket.on('eject', () => {
-    roomManager.ejectMass(socket.id);
+    arena.ejectMass(socket.id);
+  });
+
+  // Spectator requests to re-queue
+  socket.on('requeue', () => {
+    const result = arena.requeueFromSpectator(socket.id);
+    if (result.success) {
+      socket.emit('requeued', {
+        position: result.position,
+        queueSize: result.queueSize
+      });
+    } else {
+      socket.emit('requeueError', { error: result.error });
+    }
   });
 
   // Disconnect
   socket.on('disconnect', () => {
-    roomManager.leaveRoom(socket.id);
+    arena.removePlayer(socket.id);
     console.log(`Player disconnected: ${socket.id}`);
   });
 });
-
-// Game loop is handled by RoomManager internally
-// Each room updates at 60 ticks/sec and broadcasts to its players
 
 // ============ API ENDPOINTS ============
 
 // Health check
 app.get('/health', (req, res) => {
-  const rooms = roomManager.getRoomList();
-  const totalPlayers = rooms.reduce((sum, r) => sum + r.players, 0);
+  const info = arena.getInfo();
   res.json({
     status: 'ok',
-    players: totalPlayers,
-    rooms: rooms.length,
-    roomDetails: rooms
+    players: info.players,
+    queue: info.queue,
+    spectators: info.spectators,
+    state: info.state,
+    roundNumber: info.roundNumber
   });
 });
 
@@ -312,29 +339,14 @@ app.post('/api/claim', (req, res) => {
   res.json(result);
 });
 
-// Get leaderboard (public API) - returns all rooms' leaderboards
+// Get leaderboard (public API) - returns arena leaderboard
 app.get('/api/leaderboard', (req, res) => {
-  const { roomId } = req.query;
-  if (roomId) {
-    const room = roomManager.rooms.get(roomId);
-    if (room) {
-      res.json({ roomId, leaderboard: room.getLeaderboard() });
-    } else {
-      res.status(404).json({ error: 'Room not found' });
-    }
-  } else {
-    // Return all rooms' leaderboards
-    const allLeaderboards = {};
-    for (const [id, room] of roomManager.rooms) {
-      allLeaderboards[id] = room.getLeaderboard();
-    }
-    res.json(allLeaderboards);
-  }
+  res.json(arena.getLeaderboard());
 });
 
-// Get room list
-app.get('/api/rooms', (req, res) => {
-  res.json(roomManager.getRoomList());
+// Get arena info
+app.get('/api/arena', (req, res) => {
+  res.json(arena.getInfo());
 });
 
 // Get site configuration (public - for How It Works page, etc.)
@@ -372,28 +384,19 @@ app.get('/api/admin/stats', (req, res) => {
   res.json(result);
 });
 
-// Admin: Force reward distribution (for specific room)
+// Admin: Force round end
 app.post('/api/admin/distribute', (req, res) => {
-  const { adminSecret, roomId } = req.body;
+  const { adminSecret } = req.body;
 
   if (!rewards.validateAdmin(adminSecret)) {
     return res.status(403).json({ error: 'Invalid admin secret' });
   }
 
-  if (roomId) {
-    const room = roomManager.rooms.get(roomId);
-    if (!room) {
-      return res.status(404).json({ error: 'Room not found' });
-    }
-    // Force end the current round
-    if (room.state === 'playing') {
-      room.endRound();
-      res.json({ success: true, message: `Forced round end for ${roomId}` });
-    } else {
-      res.json({ success: false, message: 'Room not in playing state' });
-    }
+  if (arena.state === 'playing') {
+    arena.endRound();
+    res.json({ success: true, message: 'Forced round end' });
   } else {
-    res.status(400).json({ error: 'roomId required' });
+    res.json({ success: false, message: `Arena not in playing state (current: ${arena.state})` });
   }
 });
 
@@ -453,6 +456,27 @@ app.post('/api/admin/fee', (req, res) => {
 
   const result = rewards.recordCreatorFee(amount, txSignature);
   res.json(result);
+});
+
+// Webhook: Notify external services when round ends (for prize distribution)
+// This is called internally by room.js when a round ends
+app.post('/api/webhook/round-end', (req, res) => {
+  const { adminSecret, roomId, roundNumber, winner, leaderboard } = req.body;
+
+  if (!rewards.validateAdmin(adminSecret)) {
+    return res.status(403).json({ error: 'Invalid admin secret' });
+  }
+
+  // Log round end for external prize distribution script
+  console.log(`[WEBHOOK] Round ${roundNumber} ended in ${roomId}`);
+  if (winner) {
+    console.log(`[WEBHOOK] Winner: ${winner.username} (${winner.wallet || 'no wallet'})`);
+  }
+
+  // Emit event for any connected services
+  io.emit('roundEnded', { roomId, roundNumber, winner, leaderboard });
+
+  res.json({ success: true, message: 'Round end processed' });
 });
 
 // ============ REWARD DISTRIBUTION ============

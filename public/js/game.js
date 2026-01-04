@@ -1,4 +1,4 @@
-// Main Game Client
+// Main Game Client - Arena System
 class Game {
   constructor() {
     this.canvas = document.getElementById('game-canvas');
@@ -7,21 +7,32 @@ class Game {
     this.state = null;
     this.prevState = null;
     this.selfId = null;
-    this.roomId = null;
     this.worldSize = 3000;
     this.playerData = null;
     this.leaderboard = [];
+
+    // Player mode
+    this.mode = null; // 'arena', 'queue', 'spectator'
     this.isPlaying = false;
+    this.queuePosition = 0;
+
+    // Arena state
+    this.arenaInfo = {
+      players: 0,
+      maxPlayers: 30,
+      queue: 0,
+      spectators: 0,
+      state: 'waiting'
+    };
 
     // Battle Royale state
-    this.roundState = 'waiting'; // waiting, countdown, playing, ended
+    this.roundState = 'waiting';
     this.roundNumber = 0;
     this.roundTimeRemaining = 0;
     this.roundConfig = null;
 
     // Interpolation
     this.lastUpdateTime = 0;
-    this.interpolationFactor = 0;
 
     // Kill feed
     this.killFeed = [];
@@ -38,8 +49,12 @@ class Game {
     this.walletDisplay = document.getElementById('wallet-display');
     this.rewardCountdown = document.getElementById('reward-countdown');
 
-    // Create kill feed container
+    // Create arena info display
+    this.createArenaInfoDisplay();
     this.createKillFeed();
+    this.createPlayAgainModal();
+    this.createQueueOverlay();
+    this.createSpectatorOverlay();
 
     // Get player data from session
     const data = sessionStorage.getItem('playerData');
@@ -53,12 +68,120 @@ class Game {
     this.init();
   }
 
+  createArenaInfoDisplay() {
+    const infoDiv = document.createElement('div');
+    infoDiv.id = 'arena-info';
+    infoDiv.innerHTML = `
+      <div class="arena-stat">
+        <span class="label">PLAYERS</span>
+        <span id="arena-players">0/30</span>
+      </div>
+      <div class="arena-stat">
+        <span class="label">QUEUE</span>
+        <span id="arena-queue">0</span>
+      </div>
+      <div class="arena-stat">
+        <span class="label">WATCHING</span>
+        <span id="arena-spectators">0</span>
+      </div>
+      <div class="arena-stat timer">
+        <span id="arena-timer">--:--</span>
+      </div>
+    `;
+    document.getElementById('hud').appendChild(infoDiv);
+  }
+
   createKillFeed() {
     const killFeedDiv = document.createElement('div');
     killFeedDiv.id = 'kill-feed';
     killFeedDiv.className = 'kill-feed';
     document.getElementById('hud').appendChild(killFeedDiv);
     this.killFeedElement = killFeedDiv;
+  }
+
+  createPlayAgainModal() {
+    const modal = document.createElement('div');
+    modal.id = 'play-again-modal';
+    modal.className = 'modal hidden';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <h2>ROUND OVER!</h2>
+        <p id="round-result"></p>
+        <div class="modal-buttons">
+          <button id="btn-play-again" class="btn-primary">PLAY AGAIN</button>
+          <button id="btn-exit" class="btn-secondary">EXIT</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('btn-play-again').addEventListener('click', () => {
+      this.hidePlayAgainModal();
+      window.networkManager.requeue();
+    });
+
+    document.getElementById('btn-exit').addEventListener('click', () => {
+      window.location.href = '/';
+    });
+  }
+
+  createQueueOverlay() {
+    const overlay = document.createElement('div');
+    overlay.id = 'queue-overlay';
+    overlay.className = 'status-overlay hidden';
+    overlay.innerHTML = `
+      <div class="overlay-content">
+        <h2>IN QUEUE</h2>
+        <p>Position: <span id="queue-position">-</span></p>
+        <p class="subtitle">Watch the action while you wait!</p>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  createSpectatorOverlay() {
+    const overlay = document.createElement('div');
+    overlay.id = 'spectator-overlay';
+    overlay.className = 'status-overlay hidden';
+    overlay.innerHTML = `
+      <div class="overlay-content">
+        <h2>SPECTATING</h2>
+        <p id="spectator-message">Watching the battle...</p>
+        <button id="btn-requeue" class="btn-primary">JOIN QUEUE</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('btn-requeue').addEventListener('click', () => {
+      window.networkManager.requeue();
+    });
+  }
+
+  showPlayAgainModal(result) {
+    document.getElementById('round-result').textContent = result;
+    document.getElementById('play-again-modal').classList.remove('hidden');
+  }
+
+  hidePlayAgainModal() {
+    document.getElementById('play-again-modal').classList.add('hidden');
+  }
+
+  updateArenaInfo(data) {
+    if (data.players !== undefined) {
+      document.getElementById('arena-players').textContent =
+        `${data.players}/${data.maxPlayers || 30}`;
+    }
+    if (data.queue !== undefined || data.queueSize !== undefined) {
+      document.getElementById('arena-queue').textContent =
+        data.queue || data.queueSize || 0;
+    }
+    if (data.spectators !== undefined || data.spectatorsCount !== undefined) {
+      document.getElementById('arena-spectators').textContent =
+        data.spectators || data.spectatorsCount || 0;
+    }
+    if (data.state) {
+      this.arenaInfo.state = data.state;
+    }
   }
 
   async init() {
@@ -81,6 +204,14 @@ class Game {
       window.networkManager.onRoundEnd = (data) => this.onRoundEnd(data);
       window.networkManager.onWaitingForPlayers = (data) => this.onWaitingForPlayers(data);
 
+      // Arena callbacks
+      window.networkManager.onArenaUpdate = (data) => this.updateArenaInfo(data);
+      window.networkManager.onQueuePosition = (data) => this.onQueuePosition(data);
+      window.networkManager.onPromoted = (data) => this.onPromoted(data);
+      window.networkManager.onEliminated = (data) => this.onEliminated(data);
+      window.networkManager.onRoundEndPrompt = (data) => this.onRoundEndPrompt(data);
+      window.networkManager.onRequeued = (data) => this.onRequeued(data);
+
       // Join the game
       window.networkManager.join(this.playerData.username, this.playerData.wallet);
 
@@ -92,14 +223,15 @@ class Game {
         this.walletDisplay.textContent = 'Not connected';
       }
 
-      // Round timer is started in onJoined
-
       // Start game loop
       this.lastFrameTime = performance.now();
       this.gameLoop();
 
       // Start input sending (30fps for network)
       this.startInputLoop();
+
+      // Start timer update
+      this.startTimerLoop();
 
     } catch (error) {
       console.error('Failed to initialize game:', error);
@@ -110,20 +242,75 @@ class Game {
   onJoined(data) {
     console.log('Joined game:', data);
     this.selfId = data.id;
-    this.roomId = data.roomId;
-    this.worldSize = data.worldSize;
+    this.mode = data.mode;
+    this.worldSize = data.worldSize || 4000;
     this.renderer.worldSize = this.worldSize;
     this.roundConfig = data.config;
     this.roundState = data.state;
     this.roundNumber = data.roundNumber;
     this.roundTimeRemaining = data.timeRemaining;
-    this.isPlaying = true;
 
     // Hide loading screen
     this.loadingScreen.classList.add('hidden');
 
-    // Update round timer display
-    this.updateRoundTimer();
+    // Show appropriate overlay based on mode
+    if (data.mode === 'arena') {
+      this.isPlaying = true;
+      document.getElementById('queue-overlay').classList.add('hidden');
+      document.getElementById('spectator-overlay').classList.add('hidden');
+    } else if (data.mode === 'queue') {
+      this.isPlaying = false;
+      this.queuePosition = data.position;
+      document.getElementById('queue-position').textContent = data.position;
+      document.getElementById('queue-overlay').classList.remove('hidden');
+      document.getElementById('spectator-overlay').classList.add('hidden');
+    } else if (data.mode === 'spectator') {
+      this.isPlaying = false;
+      document.getElementById('queue-overlay').classList.add('hidden');
+      document.getElementById('spectator-overlay').classList.remove('hidden');
+    }
+  }
+
+  onQueuePosition(data) {
+    this.queuePosition = data.position;
+    document.getElementById('queue-position').textContent =
+      `${data.position} of ${data.total}`;
+  }
+
+  onPromoted(data) {
+    console.log('Promoted to arena!', data);
+    this.mode = 'arena';
+    this.isPlaying = true;
+    document.getElementById('queue-overlay').classList.add('hidden');
+    document.getElementById('spectator-overlay').classList.add('hidden');
+    this.showAnnouncement(data.message || 'You are now playing!', 'start');
+  }
+
+  onEliminated(data) {
+    console.log('Eliminated:', data);
+    this.mode = 'spectator';
+    this.isPlaying = false;
+    document.getElementById('spectator-message').textContent =
+      data.killedBy ? `Eaten by ${data.killedBy}` : 'You were eliminated';
+    document.getElementById('spectator-overlay').classList.remove('hidden');
+  }
+
+  onRoundEndPrompt(data) {
+    console.log('Round end prompt:', data);
+    this.showPlayAgainModal(data.message || 'Round Over!');
+  }
+
+  onRequeued(data) {
+    console.log('Requeued:', data);
+    this.mode = 'queue';
+    this.isPlaying = false;
+    document.getElementById('spectator-overlay').classList.add('hidden');
+    document.getElementById('play-again-modal').classList.add('hidden');
+    document.getElementById('queue-overlay').classList.remove('hidden');
+
+    if (data.position) {
+      document.getElementById('queue-position').textContent = data.position;
+    }
   }
 
   onRoundCountdown(data) {
@@ -139,6 +326,7 @@ class Game {
     this.roundState = 'playing';
     this.roundNumber = data.roundNumber;
     this.roundTimeRemaining = data.duration;
+    this.hidePlayAgainModal();
     this.showAnnouncement(`ROUND ${data.roundNumber} - FIGHT!`, 'start');
   }
 
@@ -146,22 +334,15 @@ class Game {
     console.log('Round ended:', data);
     this.roundState = 'ended';
 
-    if (data.winner) {
-      const isMe = data.winner.wallet && this.playerData.wallet &&
-        data.winner.wallet.includes(this.playerData.wallet.slice(-4));
-      if (isMe) {
-        this.showAnnouncement(`🏆 YOU WON! +${data.prizeAwarded} tokens`, 'winner');
-      } else {
-        this.showAnnouncement(`${data.winner.username} wins!`, 'end');
-      }
+    // Show top 3 winners
+    if (data.winners && data.winners.length > 0) {
+      const winnerText = data.winners.map(w =>
+        `#${w.rank} ${w.username}`
+      ).join(' | ');
+      this.showAnnouncement(`Winners: ${winnerText}`, 'end');
     } else {
-      this.showAnnouncement('Round ended - No winner', 'end');
+      this.showAnnouncement('Round ended', 'end');
     }
-
-    // Show next round countdown
-    setTimeout(() => {
-      this.showAnnouncement(`Next round in ${Math.ceil(data.nextRoundIn / 1000)}s...`, 'waiting');
-    }, 3000);
   }
 
   onWaitingForPlayers(data) {
@@ -171,7 +352,6 @@ class Game {
   }
 
   showAnnouncement(text, type) {
-    // Create or get announcement element
     let ann = document.getElementById('round-announcement');
     if (!ann) {
       ann = document.createElement('div');
@@ -195,7 +375,6 @@ class Game {
     ann.textContent = text;
     ann.style.opacity = '1';
 
-    // Color based on type
     if (type === 'winner') {
       ann.style.color = '#FFD700';
     } else if (type === 'start') {
@@ -204,14 +383,12 @@ class Game {
       ann.style.color = 'white';
     }
 
-    // Fade out after 3 seconds
     setTimeout(() => {
       ann.style.opacity = '0';
     }, 3000);
   }
 
-  updateRoundTimer() {
-    // Update every second
+  startTimerLoop() {
     setInterval(() => {
       if (this.state && this.state.timeRemaining !== undefined) {
         this.roundTimeRemaining = this.state.timeRemaining;
@@ -221,16 +398,26 @@ class Game {
       const seconds = Math.floor((this.roundTimeRemaining % 60000) / 1000);
       const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-      // Update the countdown display
+      const timerEl = document.getElementById('arena-timer');
+
       if (this.roundState === 'playing') {
-        this.rewardCountdown.textContent = timeStr;
-        this.rewardCountdown.style.color = this.roundTimeRemaining < 60000 ? '#ff4444' : 'white';
+        timerEl.textContent = timeStr;
+        timerEl.style.color = this.roundTimeRemaining < 60000 ? '#ff4444' : '#00ff00';
       } else if (this.roundState === 'countdown') {
-        this.rewardCountdown.textContent = `Starting: ${seconds}s`;
-        this.rewardCountdown.style.color = '#ffcc00';
+        timerEl.textContent = `${seconds}s`;
+        timerEl.style.color = '#ffcc00';
       } else {
-        this.rewardCountdown.textContent = 'Waiting...';
-        this.rewardCountdown.style.color = '#888';
+        timerEl.textContent = 'WAITING';
+        timerEl.style.color = '#888';
+      }
+
+      // Also update arena info from state
+      if (this.state) {
+        this.updateArenaInfo({
+          players: this.state.playersCount,
+          queue: this.state.queueCount,
+          spectators: this.state.spectatorsCount
+        });
       }
     }, 100);
   }
@@ -240,10 +427,10 @@ class Game {
     this.state = state;
     this.lastUpdateTime = performance.now();
 
-    // Find self player
-    const self = state.players.find(p => p.id === this.selfId);
+    // Find self player (only if we're in arena mode)
+    const self = this.mode === 'arena' ? state.players.find(p => p.id === this.selfId) : null;
 
-    if (self && self.cells.length > 0) {
+    if (self && self.cells && self.cells.length > 0) {
       // Update camera to follow player
       const centerX = self.cells.reduce((sum, c) => sum + c.x, 0) / self.cells.length;
       const centerY = self.cells.reduce((sum, c) => sum + c.y, 0) / self.cells.length;
@@ -251,7 +438,7 @@ class Game {
 
       this.renderer.updateCamera(centerX, centerY, totalSize);
 
-      // Update score display (show current mass, with peak in parentheses if different)
+      // Update score display
       const currentMass = self.mass || Math.floor(self.cells.reduce((sum, c) => sum + (c.mass || c.size * c.size / 100), 0));
       const peakMass = self.score || currentMass;
 
@@ -260,45 +447,42 @@ class Game {
       } else {
         this.scoreDisplay.textContent = currentMass.toLocaleString();
       }
-
-      // Hide death screen if showing
-      if (!this.deathScreen.classList.contains('hidden')) {
-        this.deathScreen.classList.add('hidden');
+    } else if (this.mode === 'spectator' || this.mode === 'queue') {
+      // Spectator/queue camera - follow the action (first player or center)
+      if (state.players && state.players.length > 0) {
+        const leader = state.players[0];
+        if (leader && leader.cells && leader.cells.length > 0) {
+          const centerX = leader.cells.reduce((sum, c) => sum + c.x, 0) / leader.cells.length;
+          const centerY = leader.cells.reduce((sum, c) => sum + c.y, 0) / leader.cells.length;
+          this.renderer.updateCamera(centerX, centerY, 100);
+        }
       }
+      this.scoreDisplay.textContent = 'SPECTATING';
     }
   }
 
   onKill(data) {
-    // Add to kill feed
     this.addKillFeedItem(data.killer, data.victim);
 
-    // Spawn particles at kill location
     if (data.x && data.y) {
       this.spawnParticles(data.x, data.y, data.color || '#ff6b6b', 20);
     }
 
-    // Screen shake if we got the kill
     if (data.killerId === this.selfId) {
       window.inputManager.triggerScreenShake();
     }
   }
 
   addKillFeedItem(killer, victim) {
-    const item = {
-      killer,
-      victim,
-      timestamp: Date.now()
-    };
+    const item = { killer, victim, timestamp: Date.now() };
     this.killFeed.unshift(item);
 
-    // Keep only recent items
     if (this.killFeed.length > this.maxKillFeedItems) {
       this.killFeed.pop();
     }
 
     this.updateKillFeedUI();
 
-    // Auto-remove after 5 seconds
     setTimeout(() => {
       const idx = this.killFeed.indexOf(item);
       if (idx > -1) {
@@ -323,8 +507,7 @@ class Game {
       const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
       const speed = 2 + Math.random() * 4;
       this.particles.push({
-        x,
-        y,
+        x, y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         size: 3 + Math.random() * 5,
@@ -362,6 +545,14 @@ class Game {
       const li = document.createElement('li');
       li.className = player.id === this.selfId ? 'self' : '';
 
+      // Highlight top 3 (prize winners)
+      if (index < 3) {
+        li.classList.add('winner');
+        if (index === 0) li.classList.add('first');
+        if (index === 1) li.classList.add('second');
+        if (index === 2) li.classList.add('third');
+      }
+
       const rank = document.createElement('span');
       rank.className = 'rank';
       rank.textContent = `${index + 1}.`;
@@ -372,10 +563,12 @@ class Game {
 
       const score = document.createElement('span');
       score.className = 'score';
-      // Show score (peak mass) - mass is what determines rank
       score.textContent = player.score.toLocaleString();
 
-      // Add kills if available
+      li.appendChild(rank);
+      li.appendChild(name);
+      li.appendChild(score);
+
       if (player.kills > 0) {
         const kills = document.createElement('span');
         kills.className = 'kills';
@@ -383,14 +576,7 @@ class Game {
         kills.style.marginLeft = '5px';
         kills.style.fontSize = '0.8em';
         kills.style.opacity = '0.8';
-        li.appendChild(rank);
-        li.appendChild(name);
-        li.appendChild(score);
         li.appendChild(kills);
-      } else {
-        li.appendChild(rank);
-        li.appendChild(name);
-        li.appendChild(score);
       }
 
       this.leaderboardList.appendChild(li);
@@ -399,28 +585,20 @@ class Game {
 
   startInputLoop() {
     setInterval(() => {
-      if (!this.isPlaying) return;
+      if (this.mode !== 'arena') return;
 
-      // Get direction from input manager
       const dir = window.inputManager.getDirection();
-
-      // Send input to server
-      window.networkManager.sendInput(dir.x, dir.y, dir.boost);
-    }, 33); // ~30fps for network
+      window.networkManager.sendInput(dir.x, dir.y);
+    }, 33);
   }
-
 
   gameLoop(currentTime) {
     const dt = (currentTime - this.lastFrameTime) / 1000;
     this.lastFrameTime = currentTime;
 
-    // Update particles
     this.updateParticles(dt);
-
-    // Render with interpolation
     this.renderer.render(this.state, this.selfId, this.minimapCanvas, this.particles);
 
-    // Continue loop
     requestAnimationFrame((t) => this.gameLoop(t));
   }
 }
