@@ -403,19 +403,26 @@ app.get('/api/admin/stats', (req, res) => {
   res.json(result);
 });
 
-// Admin: Force round end
-app.post('/api/admin/distribute', (req, res) => {
+// Admin: Force reward distribution
+app.post('/api/admin/distribute', async (req, res) => {
   const { adminSecret } = req.body;
 
   if (!rewards.validateAdmin(adminSecret)) {
     return res.status(403).json({ error: 'Invalid admin secret' });
   }
 
-  if (arena.state === 'playing') {
-    arena.endRound();
-    res.json({ success: true, message: 'Forced round end' });
-  } else {
-    res.json({ success: false, message: `Arena not in playing state (current: ${arena.state})` });
+  try {
+    await arena.distributeRewards();
+    res.json({
+      success: true,
+      message: 'Forced reward distribution',
+      solanaStatus: arena.solanaDistributor.getStatus()
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      message: `Distribution failed: ${error.message}`
+    });
   }
 });
 
