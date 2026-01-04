@@ -48,8 +48,8 @@ pub mod trumpworm {
 
     /// Distribute rewards to top players (authority only)
     /// Called hourly by the game server
-    pub fn distribute_rewards(
-        ctx: Context<DistributeRewards>,
+    pub fn distribute_rewards<'info>(
+        ctx: Context<'_, '_, 'info, 'info, DistributeRewards<'info>>,
         amounts: Vec<u64>,
     ) -> Result<()> {
         require!(
