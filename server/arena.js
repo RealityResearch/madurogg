@@ -15,7 +15,7 @@ const ARENA_CONFIG = {
   ROUND_DURATION: 10 * 60 * 1000,     // 10 minutes
   COUNTDOWN_DURATION: 30 * 1000,      // 30 seconds before round starts
   INTERMISSION: 30 * 1000,            // 30 seconds between rounds
-  MIN_PLAYERS_TO_START: 2,            // Minimum to start a round
+  MIN_PLAYERS_TO_START: 1,            // Minimum to start a round (1 for solo testing)
   QUEUE_PRIORITY_HOLDER_BONUS: 100,   // Token holders get queue priority
 };
 
