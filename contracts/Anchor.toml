@@ -18,7 +18,7 @@ trumpworm = "DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
