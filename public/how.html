@@ -113,36 +113,27 @@
       line-height: 1.6;
     }
 
-    .code-block {
-      background: #111;
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 20px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 14px;
-      overflow-x: auto;
-      margin: 20px 0;
+    .highlight-box {
+      background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(153, 69, 255, 0.1) 100%);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      border-radius: 12px;
+      padding: 30px;
+      margin: 30px 0;
+      text-align: center;
     }
 
-    .code-label {
-      color: #888;
-      font-size: 12px;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-    }
-
-    .code-value {
+    .highlight-box .big-text {
+      font-size: 48px;
+      font-weight: 700;
       color: #4ade80;
-      word-break: break-all;
+      margin-bottom: 10px;
     }
 
-    .code-link {
-      color: #60a5fa;
-      text-decoration: none;
-    }
-
-    .code-link:hover {
-      text-decoration: underline;
+    .highlight-box .label {
+      color: #888;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
     }
 
     .timeline {
@@ -158,7 +149,7 @@
       top: 0;
       bottom: 0;
       width: 2px;
-      background: linear-gradient(to bottom, #ff4444, #4ade80);
+      background: linear-gradient(to bottom, #4ade80, #9945ff);
     }
 
     .timeline-item {
@@ -174,7 +165,7 @@
       top: 26px;
       width: 12px;
       height: 12px;
-      background: #fff;
+      background: #4ade80;
       border-radius: 50%;
     }
 
@@ -202,7 +193,7 @@
     .stat-value {
       font-size: 36px;
       font-weight: 700;
-      color: #ff4444;
+      color: #4ade80;
     }
 
     .stat-label {
@@ -224,18 +215,50 @@
       margin-bottom: 10px;
     }
 
-    .contract-placeholder {
-      background: rgba(96,165,250,0.1);
-      border: 1px dashed rgba(96,165,250,0.5);
+    .cta-button {
+      display: inline-block;
+      padding: 16px 40px;
+      background: #4ade80;
+      color: #0a0a0a;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
       border-radius: 8px;
-      padding: 20px;
-      text-align: center;
-      margin: 20px 0;
+      transition: all 0.2s;
+      margin-top: 20px;
     }
 
-    .contract-placeholder p {
-      color: #60a5fa;
-      margin: 0;
+    .cta-button:hover {
+      background: #22c55e;
+      transform: translateY(-2px);
+    }
+
+    .link-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .link-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .link-card h4 {
+      margin-bottom: 8px;
+    }
+
+    .link-card a {
+      color: #9945ff;
+      text-decoration: none;
+    }
+
+    .link-card a:hover {
+      text-decoration: underline;
     }
 
     @media (max-width: 768px) {
@@ -254,6 +277,10 @@
       .stat-row {
         justify-content: center;
       }
+
+      .highlight-box .big-text {
+        font-size: 36px;
+      }
     }
   </style>
 </head>
@@ -267,7 +294,7 @@
 
   <main class="how-content">
     <h1 class="how-title">How It Works</h1>
-    <p class="how-subtitle">The world's first on-chain Battle Royale memecoin game</p>
+    <p class="how-subtitle">Play, compete, and earn SOL every 10 minutes</p>
 
     <!-- Game Overview -->
     <section class="section">
@@ -277,51 +304,58 @@
 
         <div class="feature-grid">
           <div class="feature-card">
-            <h4>Battle Royale Rounds</h4>
-            <p>10-minute rounds. Last player standing or highest mass wins the entire prize pool.</p>
+            <h4>Continuous Play</h4>
+            <p>No rounds, no waiting. Jump in anytime and start playing immediately. The game never stops.</p>
           </div>
           <div class="feature-card">
-            <h4>Fair Play Lock</h4>
-            <p>No new players can join after 5 minutes into a round. No late-game ambushes.</p>
+            <h4>50 Player Arena</h4>
+            <p>Battle against up to 50 players at once. If the arena is full, you'll spectate until a spot opens.</p>
           </div>
           <div class="feature-card">
-            <h4>Room System</h4>
-            <p>30 players max per room. New rooms auto-created when full. Everyone sees everyone.</p>
+            <h4>10-Minute Rewards</h4>
+            <p>Every 10 minutes, SOL is distributed to top players on the leaderboard. Automatic and verifiable.</p>
           </div>
           <div class="feature-card">
             <h4>Real Stakes</h4>
-            <p>Connect your wallet to compete for the prize pool. No wallet = playing for fun.</p>
+            <p>Connect your Phantom wallet to compete for SOL. No wallet = playing for fun.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Round Flow -->
+    <!-- Reward System -->
     <section class="section">
-      <h2 class="section-title"><span class="icon">⏱️</span> Round Flow</h2>
+      <h2 class="section-title"><span class="icon">💰</span> Reward System</h2>
       <div class="section-content">
+        <div class="highlight-box">
+          <div class="big-text">Every 10 Minutes</div>
+          <div class="label">SOL is distributed to top players</div>
+        </div>
+
         <div class="timeline">
           <div class="timeline-item">
-            <h4>Waiting for Players</h4>
-            <p>Minimum 2 players needed to start. Join any open room.</p>
+            <h4>1. Connect Wallet</h4>
+            <p>Link your Phantom wallet before joining the game to be eligible for rewards.</p>
           </div>
           <div class="timeline-item">
-            <h4>30-Second Countdown</h4>
-            <p>Get ready! Round is about to begin. Last chance to join.</p>
+            <h4>2. Climb the Leaderboard</h4>
+            <p>Eat food and other players to gain mass. Higher mass = higher leaderboard position.</p>
           </div>
           <div class="timeline-item">
-            <h4>10-Minute Battle (Join Window: First 5 min)</h4>
-            <p>Eat, grow, dominate. Room locks at 5-minute mark.</p>
+            <h4>3. Stay in Top Positions</h4>
+            <p>When the 10-minute timer hits zero, a snapshot is taken of the leaderboard.</p>
           </div>
           <div class="timeline-item">
-            <h4>Winner Takes All</h4>
-            <p>Last alive OR highest mass when timer ends wins the prize pool.</p>
+            <h4>4. Receive SOL</h4>
+            <p>Top players automatically receive SOL directly to their wallet. No claiming needed.</p>
           </div>
           <div class="timeline-item">
-            <h4>15-Second Intermission</h4>
-            <p>Results shown. Next round begins automatically.</p>
+            <h4>5. Keep Playing</h4>
+            <p>Timer resets and the game continues. Next distribution in 10 minutes.</p>
           </div>
         </div>
+
+        <p><strong>Distribution Tiers:</strong> Rewards are split among top players based on how many are in the arena. With 2-10 players, top 3 win. With 26-50 players, top 10 win.</p>
       </div>
     </section>
 
@@ -334,13 +368,15 @@
             <h4>Desktop</h4>
             <p><strong>WASD / Arrow Keys:</strong> Move<br>
             <strong>Spacebar:</strong> Split (35+ mass)<br>
-            <strong>E:</strong> Eject mass (32+ mass)</p>
+            <strong>E:</strong> Eject mass (32+ mass)<br>
+            <strong>ESC:</strong> Pause menu</p>
           </div>
           <div class="feature-card">
             <h4>Mobile</h4>
             <p><strong>Virtual Joystick:</strong> Move<br>
             <strong>SPLIT Button:</strong> Split cell<br>
-            <strong>EJECT Button:</strong> Shoot mass</p>
+            <strong>EJECT Button:</strong> Shoot mass<br>
+            <strong>Menu Button:</strong> Pause</p>
           </div>
         </div>
       </div>
@@ -372,130 +408,67 @@
         <p><strong>Eating:</strong> You must be 25% larger than another player to consume them. Smaller cells can hide inside viruses (green spiky circles).</p>
         <p><strong>Splitting:</strong> Doubles your cells and launches half your mass forward. Great for catching prey or escaping.</p>
         <p><strong>Viruses:</strong> Feed a virus 7 times (eject mass at it) to spawn a new virus. Large players (150+ mass) explode when touching viruses.</p>
+        <p><strong>Anti-Snowball:</strong> Larger cells decay faster to prevent one player from dominating forever. Killing top players gives bonus mass.</p>
       </div>
     </section>
 
-    <!-- Smart Contract -->
+    <!-- Transparency -->
     <section class="section">
-      <h2 class="section-title"><span class="icon">🔐</span> On-Chain Infrastructure</h2>
+      <h2 class="section-title"><span class="icon">🔍</span> Transparency</h2>
       <div class="section-content">
-        <p>MADURO.GG uses trustless on-chain escrow for prize distribution. No need to trust that rewards will be sent - the smart contract handles everything transparently.</p>
-
-        <div class="code-block">
-          <div class="code-label">Escrow Contract (Devnet)</div>
-          <div class="code-value" id="contract-address">DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF</div>
-          <a href="https://solscan.io/account/DLLQxjjnjiyRQHFt7Q63G7TLvVu9WAf4aCyd2q1qPAbF?cluster=devnet" target="_blank" class="code-link">View on Solscan →</a>
-        </div>
+        <p>Every SOL distribution is verifiable on-chain. We believe in full transparency:</p>
 
         <div class="feature-grid">
           <div class="feature-card">
-            <h4>Prize Pool PDA</h4>
-            <p>Tokens are held in a Program Derived Address, not a personal wallet. Fully auditable on-chain.</p>
+            <h4>Public Prize Wallet</h4>
+            <p>The prize wallet address is public. Anyone can view its balance and transaction history on Solscan.</p>
           </div>
           <div class="feature-card">
-            <h4>Automatic Distribution</h4>
-            <p>When a round ends, the contract automatically transfers the prize to the winner's wallet.</p>
-          </div>
-          <div class="feature-card">
-            <h4>Transparent History</h4>
-            <p>Every distribution is recorded on-chain. Check Solscan for complete transaction history.</p>
+            <h4>Verified Transactions</h4>
+            <p>Every distribution includes transaction signatures. Click "View TX" to verify on Solscan.</p>
           </div>
           <div class="feature-card">
             <h4>Open Source</h4>
-            <p>Smart contract code is open source and verified. Trust the code, not the team.</p>
+            <p>Game code is open source on GitHub. Review the distribution logic yourself.</p>
+          </div>
+          <div class="feature-card">
+            <h4>Live Dashboard</h4>
+            <p>View all distributions, the leaderboard, and prize wallet info on our Transparency page.</p>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- Token -->
-    <section class="section">
-      <h2 class="section-title"><span class="icon">🪙</span> $MADURO Token</h2>
-      <div class="section-content">
-        <div class="code-block">
-          <div class="code-label">Token Contract</div>
-          <div class="code-value" id="token-mint">Loading...</div>
-          <a href="#" id="token-link" target="_blank" class="code-link">View on pump.fun →</a>
-        </div>
-
-        <p><strong>Prize Pool Funding:</strong> Creator fees (0.3%) from all $MADURO trades on pump.fun flow into the game's prize pool. The more volume, the bigger the prizes.</p>
-
-        <div class="warning-box">
-          <h4>Not Financial Advice</h4>
-          <p>$MADURO is a memecoin. Only play with what you can afford to lose. The game is for entertainment purposes. DYOR.</p>
+        <div style="text-align: center; margin-top: 30px;">
+          <a href="/stats.html" class="cta-button">View Transparency Dashboard</a>
         </div>
       </div>
     </section>
 
-    <!-- Technical -->
+    <!-- Warning -->
     <section class="section">
-      <h2 class="section-title"><span class="icon">⚙️</span> Technical Details</h2>
-      <div class="section-content">
-        <div class="code-block">
-          <div class="code-label">Stack</div>
-          <pre style="margin:0;color:#ccc;">
-Backend:    Node.js + Express + Socket.IO
-Frontend:   HTML5 Canvas + Vanilla JS
-Wallet:     Phantom Integration
-Contracts:  Anchor (Solana)
-Hosting:    Railway (WebSocket) + Vercel (Static)
-Tick Rate:  60 Hz (Server Authoritative)</pre>
-        </div>
-
-        <p><strong>Server Authoritative:</strong> All game logic runs server-side to prevent cheating. The client only handles rendering and input.</p>
-        <p><strong>Real-Time Sync:</strong> 60 updates per second ensure smooth gameplay. Interpolation provides butter-smooth visuals.</p>
+      <div class="warning-box">
+        <h4>Not Financial Advice</h4>
+        <p>MADURO.GG is a game for entertainment purposes. Only play with what you can afford to lose. We are not responsible for any losses. DYOR.</p>
       </div>
     </section>
 
     <!-- Links -->
     <section class="section">
       <h2 class="section-title"><span class="icon">🔗</span> Links</h2>
-      <div class="section-content">
-        <div class="feature-grid">
-          <div class="feature-card">
-            <h4>Play Now</h4>
-            <p><a href="/" class="code-link">maduro.gg</a></p>
-          </div>
-          <div class="feature-card">
-            <h4>Buy Token</h4>
-            <p><a href="https://pump.fun/coin/CmgJ1PobhUqB7MEa8qDkiG2TUpMTskWj8d9JeZWSpump" target="_blank" class="code-link" id="pump-link">pump.fun</a></p>
-          </div>
-          <div class="feature-card">
-            <h4>Twitter</h4>
-            <p><a href="#" class="code-link" id="twitter-link">@madurogg</a></p>
-          </div>
-          <div class="feature-card">
-            <h4>Telegram</h4>
-            <p><a href="#" class="code-link" id="telegram-link">t.me/madurogg</a></p>
-          </div>
+      <div class="link-grid">
+        <div class="link-card">
+          <h4>Play Now</h4>
+          <a href="/">maduro.gg</a>
+        </div>
+        <div class="link-card">
+          <h4>Transparency</h4>
+          <a href="/stats.html">View Dashboard</a>
+        </div>
+        <div class="link-card">
+          <h4>GitHub</h4>
+          <a href="https://github.com/RealityResearch/madurogg" target="_blank">Source Code</a>
         </div>
       </div>
     </section>
   </main>
-
-  <script>
-    // Load config from server
-    fetch('/api/config')
-      .then(r => r.json())
-      .then(config => {
-        if (config.tokenMint) {
-          document.getElementById('token-mint').textContent = config.tokenMint;
-          document.getElementById('token-link').href = `https://pump.fun/coin/${config.tokenMint}`;
-          document.getElementById('pump-link').href = `https://pump.fun/coin/${config.tokenMint}`;
-        }
-        if (config.contractAddress) {
-          document.getElementById('contract-address').textContent = config.contractAddress;
-        }
-        if (config.twitter) {
-          document.getElementById('twitter-link').href = config.twitter;
-        }
-        if (config.telegram) {
-          document.getElementById('telegram-link').href = config.telegram;
-        }
-      })
-      .catch(() => {
-        document.getElementById('token-mint').textContent = 'CmgJ1PobhUqB7MEa8qDkiG2TUpMTskWj8d9JeZWSpump';
-      });
-  </script>
 </body>
 </html>
