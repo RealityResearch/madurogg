@@ -170,19 +170,19 @@ class NetworkManager {
 
   // Direction-based input (-1 to 1 for x and y)
   sendInput(dirX, dirY) {
-    if (this.socket && this.connected && this.mode === 'arena') {
+    if (this.socket && this.connected) {
       this.socket.emit('input', { dirX, dirY });
     }
   }
 
   split() {
-    if (this.socket && this.connected && this.mode === 'arena') {
+    if (this.socket && this.connected) {
       this.socket.emit('split');
     }
   }
 
   eject() {
-    if (this.socket && this.connected && this.mode === 'arena') {
+    if (this.socket && this.connected) {
       this.socket.emit('eject');
     }
   }

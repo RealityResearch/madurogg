@@ -246,9 +246,9 @@ class Game {
     this.worldSize = data.worldSize || 4000;
     this.renderer.worldSize = this.worldSize;
     this.roundConfig = data.config;
-    this.roundState = data.state;
-    this.roundNumber = data.roundNumber;
-    this.roundTimeRemaining = data.timeRemaining;
+    this.roundState = data.state || 'waiting';
+    this.roundNumber = data.roundNumber || 0;
+    this.roundTimeRemaining = data.timeRemaining || 0;
 
     // Hide loading screen
     this.loadingScreen.classList.add('hidden');
@@ -256,8 +256,10 @@ class Game {
     // Show appropriate overlay based on mode
     if (data.mode === 'arena') {
       this.isPlaying = true;
+      this.mode = 'arena';
       document.getElementById('queue-overlay').classList.add('hidden');
       document.getElementById('spectator-overlay').classList.add('hidden');
+      console.log('Mode set to arena, isPlaying:', this.isPlaying);
     } else if (data.mode === 'queue') {
       this.isPlaying = false;
       this.queuePosition = data.position;
@@ -585,7 +587,8 @@ class Game {
 
   startInputLoop() {
     setInterval(() => {
-      if (this.mode !== 'arena') return;
+      // Send input if we're in arena mode and playing
+      if (!this.isPlaying) return;
 
       const dir = window.inputManager.getDirection();
       window.networkManager.sendInput(dir.x, dir.y);

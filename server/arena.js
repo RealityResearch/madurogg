@@ -455,19 +455,20 @@ class Arena {
   // ============ GAME ACTIONS ============
 
   handleInput(socketId, input) {
-    if (this.state === 'playing' && this.players.has(socketId)) {
+    // Allow movement in all states except 'ended'
+    if (this.state !== 'ended' && this.players.has(socketId)) {
       this.game.handleInput(socketId, input);
     }
   }
 
   splitPlayer(socketId) {
-    if (this.state === 'playing' && this.players.has(socketId)) {
+    if (this.state !== 'ended' && this.players.has(socketId)) {
       this.game.splitPlayer(socketId);
     }
   }
 
   ejectMass(socketId) {
-    if (this.state === 'playing' && this.players.has(socketId)) {
+    if (this.state !== 'ended' && this.players.has(socketId)) {
       this.game.ejectMass(socketId);
     }
   }
