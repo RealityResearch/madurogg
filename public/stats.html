@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Leaderboard - MADURO.GG</title>
+  <title>Transparency - MADURO.GG</title>
   <link rel="stylesheet" href="/css/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
@@ -43,7 +43,7 @@
     .back-link:hover { color: #fff; }
 
     .stats-content {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 40px 20px;
     }
@@ -59,52 +59,129 @@
       margin-bottom: 40px;
     }
 
-    .pump-stats {
+    /* Prize Wallet Hero */
+    .wallet-hero {
+      background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(153, 69, 255, 0.1) 100%);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .wallet-label {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    .wallet-address {
+      font-size: 18px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #4ade80;
+      word-break: break-all;
+      margin-bottom: 15px;
+    }
+
+    .wallet-address a {
+      color: #4ade80;
+      text-decoration: none;
+    }
+
+    .wallet-address a:hover {
+      text-decoration: underline;
+    }
+
+    .wallet-network {
+      display: inline-block;
+      padding: 4px 12px;
+      background: rgba(153, 69, 255, 0.2);
+      border: 1px solid rgba(153, 69, 255, 0.5);
+      border-radius: 20px;
+      font-size: 11px;
+      color: #9945ff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .wallet-network.mainnet {
+      background: rgba(0, 255, 136, 0.2);
+      border-color: rgba(0, 255, 136, 0.5);
+      color: #4ade80;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 16px;
       margin-bottom: 40px;
     }
 
-    .pump-stat {
+    .stat-card {
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 12px;
-      padding: 20px;
+      padding: 24px;
       text-align: center;
     }
 
-    .pump-stat-value {
-      font-size: 28px;
+    .stat-card.highlight {
+      border-color: rgba(0, 255, 136, 0.3);
+      background: rgba(0, 255, 136, 0.05);
+    }
+
+    .stat-value {
+      font-size: 32px;
       font-weight: 700;
       color: #4ade80;
       margin-bottom: 5px;
       font-family: 'JetBrains Mono', monospace;
     }
 
-    .pump-stat-value.red { color: #ff4444; }
-    .pump-stat-value.blue { color: #60a5fa; }
-    .pump-stat-value.yellow { color: #fbbf24; }
+    .stat-value.purple { color: #9945ff; }
+    .stat-value.blue { color: #60a5fa; }
+    .stat-value.yellow { color: #fbbf24; }
+    .stat-value.red { color: #ff4444; }
 
-    .pump-stat-label {
+    .stat-label {
       font-size: 12px;
       color: #888;
       text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
+    /* Section */
     .section {
       margin-bottom: 40px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
     }
 
     .section-title {
       font-size: 20px;
       font-weight: 600;
-      margin-bottom: 16px;
       display: flex;
       align-items: center;
       gap: 10px;
     }
 
+    .section-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      background: rgba(0, 255, 136, 0.2);
+      color: #4ade80;
+      border-radius: 10px;
+    }
+
+    /* Distributions */
     .distributions-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -156,7 +233,7 @@
 
     .winner-row {
       display: grid;
-      grid-template-columns: 35px 1fr 80px 60px;
+      grid-template-columns: 35px 1fr 80px 70px;
       padding: 10px 12px;
       border-bottom: 1px solid rgba(255,255,255,0.05);
       align-items: center;
@@ -201,10 +278,132 @@
       text-decoration: underline;
     }
 
-    .no-distributions {
+    .no-data {
       text-align: center;
       color: #888;
       padding: 40px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+    }
+
+    /* Leaderboard */
+    .leaderboard-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .lb-header {
+      display: grid;
+      grid-template-columns: 50px 1fr 100px 100px;
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.3);
+      font-size: 11px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .lb-row {
+      display: grid;
+      grid-template-columns: 50px 1fr 100px 100px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      align-items: center;
+      font-size: 14px;
+    }
+
+    .lb-row:last-child { border-bottom: none; }
+
+    .lb-rank {
+      font-weight: 700;
+      color: #888;
+    }
+
+    .lb-rank.gold { color: #fbbf24; }
+    .lb-rank.silver { color: #9ca3af; }
+    .lb-rank.bronze { color: #cd7f32; }
+
+    .lb-name {
+      font-weight: 500;
+    }
+
+    .lb-score {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      color: #4ade80;
+    }
+
+    .lb-wallet {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .lb-wallet a {
+      color: #9945ff;
+      text-decoration: none;
+    }
+
+    .lb-wallet a:hover {
+      text-decoration: underline;
+    }
+
+    /* How It Works */
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .how-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .how-step {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      background: #4ade80;
+      color: #0a0a0a;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 28px;
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .how-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .how-desc {
+      font-size: 14px;
+      color: #888;
+      line-height: 1.5;
+    }
+
+    /* Footer note */
+    .transparency-note {
+      text-align: center;
+      padding: 30px;
+      color: #666;
+      font-size: 13px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      margin-top: 40px;
+    }
+
+    .transparency-note a {
+      color: #9945ff;
+      text-decoration: none;
     }
 
     @media (max-width: 768px) {
@@ -216,8 +415,28 @@
         font-size: 28px;
       }
 
-      .pump-stats {
+      .wallet-address {
+        font-size: 14px;
+      }
+
+      .stats-grid {
         grid-template-columns: repeat(2, 1fr);
+      }
+
+      .stat-value {
+        font-size: 24px;
+      }
+
+      .distributions-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .lb-header, .lb-row {
+        grid-template-columns: 40px 1fr 80px;
+      }
+
+      .lb-wallet {
+        display: none;
       }
     }
   </style>
@@ -231,139 +450,276 @@
   </header>
 
   <main class="stats-content">
-    <h1 class="stats-title">Leaderboard</h1>
-    <p class="stats-subtitle">Live stats from pump.fun and recent SOL distributions</p>
+    <h1 class="stats-title">Transparency Dashboard</h1>
+    <p class="stats-subtitle">Verify all SOL distributions on-chain. Every transaction is public.</p>
 
-    <!-- Pump Stats -->
-    <div class="pump-stats">
-      <div class="pump-stat">
-        <div class="pump-stat-value" id="total-fees">--</div>
-        <div class="pump-stat-label">Total Fees (SOL)</div>
+    <!-- Prize Wallet Section -->
+    <div class="wallet-hero">
+      <div class="wallet-label">Prize Wallet Address</div>
+      <div class="wallet-address" id="prize-wallet">
+        <a href="#" target="_blank" id="wallet-link">Loading...</a>
       </div>
-      <div class="pump-stat">
-        <div class="pump-stat-value" id="fees-24h">--</div>
-        <div class="pump-stat-label">24h Fees (SOL)</div>
+      <div class="wallet-network" id="wallet-network">devnet</div>
+    </div>
+
+    <!-- Key Stats -->
+    <div class="stats-grid">
+      <div class="stat-card highlight">
+        <div class="stat-value" id="total-distributed">0</div>
+        <div class="stat-label">Total SOL Distributed</div>
       </div>
-      <div class="pump-stat">
-        <div class="pump-stat-value blue" id="trades-24h">--</div>
-        <div class="pump-stat-label">24h Trades</div>
+      <div class="stat-card">
+        <div class="stat-value purple" id="distribution-count">0</div>
+        <div class="stat-label">Distributions</div>
       </div>
-      <div class="pump-stat">
-        <div class="pump-stat-value yellow" id="holders">--</div>
-        <div class="pump-stat-label">Holders</div>
+      <div class="stat-card">
+        <div class="stat-value blue" id="max-per-round">0</div>
+        <div class="stat-label">Max SOL/Round</div>
       </div>
-      <div class="pump-stat">
-        <div class="pump-stat-value red" id="players-online">0</div>
-        <div class="pump-stat-label">Players Online</div>
+      <div class="stat-card">
+        <div class="stat-value red" id="players-online">0</div>
+        <div class="stat-label">Players Online</div>
       </div>
-      <div class="pump-stat">
-        <div class="pump-stat-value" id="sol-price">--</div>
-        <div class="pump-stat-label">SOL Price</div>
+      <div class="stat-card">
+        <div class="stat-value yellow" id="next-reward">--:--</div>
+        <div class="stat-label">Next Distribution</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="total-fees">--</div>
+        <div class="stat-label">Creator Fees (SOL)</div>
+      </div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">How Rewards Work</h2>
+      </div>
+      <div class="how-grid">
+        <div class="how-card">
+          <div class="how-step">1</div>
+          <div class="how-title">Play the Game</div>
+          <div class="how-desc">Eat other players and food to climb the leaderboard. Connect your Phantom wallet to be eligible.</div>
+        </div>
+        <div class="how-card">
+          <div class="how-step">2</div>
+          <div class="how-title">Every 10 Minutes</div>
+          <div class="how-desc">The server automatically takes a snapshot of the leaderboard and distributes SOL to top players.</div>
+        </div>
+        <div class="how-card">
+          <div class="how-step">3</div>
+          <div class="how-title">Instant SOL Transfer</div>
+          <div class="how-desc">Winners receive SOL directly to their wallet. Every transaction is verifiable on Solscan.</div>
+        </div>
+        <div class="how-card">
+          <div class="how-step">4</div>
+          <div class="how-title">Keep Playing</div>
+          <div class="how-desc">Game continues non-stop. New distributions every 10 minutes. No rounds, no waiting.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Current Leaderboard -->
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">Current Leaderboard</h2>
+        <span class="section-badge">LIVE</span>
+      </div>
+      <div class="leaderboard-card">
+        <div class="lb-header">
+          <span>Rank</span>
+          <span>Player</span>
+          <span style="text-align:right">Score</span>
+          <span style="text-align:right">Wallet</span>
+        </div>
+        <div id="leaderboard-container">
+          <div class="no-data">No players online</div>
+        </div>
       </div>
     </div>
 
     <!-- Recent Distributions -->
     <div class="section">
-      <h2 class="section-title">Recent SOL Distributions</h2>
-      <div class="distributions-grid" id="distributions-container">
-        <div class="no-distributions">Loading distributions...</div>
+      <div class="section-header">
+        <h2 class="section-title">Recent Distributions</h2>
+        <span class="section-badge">VERIFIED</span>
       </div>
+      <div class="distributions-grid" id="distributions-container">
+        <div class="no-data">No distributions yet</div>
+      </div>
+    </div>
+
+    <div class="transparency-note">
+      All transactions are on-chain and verifiable. View the prize wallet on
+      <a href="#" id="solscan-link" target="_blank">Solscan</a> to see complete history.
+      <br><br>
+      Code is open source on <a href="https://github.com/RealityResearch/madurogg" target="_blank">GitHub</a>.
     </div>
   </main>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
+    let transparencyData = null;
+    let isDevnet = true;
+
+    // Fetch transparency stats
+    async function fetchTransparency() {
+      try {
+        const data = await fetch('/api/transparency').then(r => r.json());
+        transparencyData = data;
+
+        // Update wallet info
+        const walletEl = document.getElementById('prize-wallet');
+        const walletLink = document.getElementById('wallet-link');
+        const networkEl = document.getElementById('wallet-network');
+        const solscanLink = document.getElementById('solscan-link');
+
+        isDevnet = data.network === 'devnet';
+        const solscanBase = isDevnet ? 'https://solscan.io/account/' : 'https://solscan.io/account/';
+        const solscanSuffix = isDevnet ? '?cluster=devnet' : '';
+
+        if (data.prizeWallet) {
+          walletLink.textContent = data.prizeWallet;
+          walletLink.href = `${solscanBase}${data.prizeWallet}${solscanSuffix}`;
+          solscanLink.href = `${solscanBase}${data.prizeWallet}${solscanSuffix}`;
+        }
+
+        networkEl.textContent = data.network || 'devnet';
+        networkEl.className = 'wallet-network' + (data.network === 'mainnet-beta' ? ' mainnet' : '');
+
+        // Update stats
+        document.getElementById('total-distributed').textContent =
+          (data.stats?.totalDistributed || 0).toFixed(4);
+        document.getElementById('distribution-count').textContent =
+          data.stats?.distributionCount || 0;
+        document.getElementById('max-per-round').textContent =
+          data.stats?.maxPrizePerRound || 0.1;
+
+        // Update distributions
+        renderDistributions(data.recentDistributions || []);
+
+      } catch (e) {
+        console.error('Failed to fetch transparency:', e);
+      }
+    }
+
+    // Fetch arena info
+    async function fetchArena() {
+      try {
+        const data = await fetch('/api/arena').then(r => r.json());
+        document.getElementById('players-online').textContent = data.players || 0;
+
+        // Update countdown
+        if (data.timeUntilReward) {
+          const mins = Math.floor(data.timeUntilReward / 60000);
+          const secs = Math.floor((data.timeUntilReward % 60000) / 1000);
+          document.getElementById('next-reward').textContent =
+            `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+      } catch (e) {
+        console.error('Failed to fetch arena:', e);
+      }
+    }
+
+    // Fetch leaderboard
+    async function fetchLeaderboard() {
+      try {
+        const players = await fetch('/api/leaderboard').then(r => r.json());
+        const container = document.getElementById('leaderboard-container');
+
+        if (!players || players.length === 0) {
+          container.innerHTML = '<div class="no-data">No players online</div>';
+          return;
+        }
+
+        const solscanSuffix = isDevnet ? '?cluster=devnet' : '';
+
+        container.innerHTML = players.slice(0, 10).map((p, i) => {
+          const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+          const walletDisplay = p.wallet ?
+            `<a href="https://solscan.io/account/${p.wallet}${solscanSuffix}" target="_blank">${p.wallet.slice(0,4)}...${p.wallet.slice(-4)}</a>` :
+            '-';
+
+          return `
+            <div class="lb-row">
+              <span class="lb-rank ${rankClass}">#${i + 1}</span>
+              <span class="lb-name">${p.username}</span>
+              <span class="lb-score">${p.score.toLocaleString()}</span>
+              <span class="lb-wallet">${walletDisplay}</span>
+            </div>
+          `;
+        }).join('');
+
+      } catch (e) {
+        console.error('Failed to fetch leaderboard:', e);
+      }
+    }
 
     // Fetch pump stats
     async function fetchPumpStats() {
       try {
-        const res = await fetch('/api/pump');
-        const data = await res.json();
-
+        const data = await fetch('/api/pump').then(r => r.json());
         if (!data.error) {
           document.getElementById('total-fees').textContent = formatSOL(data.balanceSOL);
-          document.getElementById('fees-24h').textContent = formatSOL(data.fees24hSOL);
-          document.getElementById('trades-24h').textContent = formatNum(data.trades24h);
-          document.getElementById('holders').textContent = formatNum(data.holders);
-          document.getElementById('sol-price').textContent = '$' + data.solPriceUSD.toFixed(2);
         }
       } catch (e) {
         console.error('Failed to fetch pump stats:', e);
       }
     }
 
-    // Fetch arena info for player count
-    async function fetchArena() {
-      try {
-        const arenaRes = await fetch('/api/arena').then(r => r.json());
-        document.getElementById('players-online').textContent = arenaRes.players || 0;
-      } catch (e) {
-        console.error('Failed to fetch arena:', e);
+    // Render distributions
+    function renderDistributions(distributions) {
+      const container = document.getElementById('distributions-container');
+
+      if (!distributions || distributions.length === 0) {
+        container.innerHTML = '<div class="no-data">No distributions yet. Play to earn SOL rewards every 10 minutes!</div>';
+        return;
       }
-    }
 
-    // Fetch distribution history
-    async function fetchDistributions() {
-      try {
-        const distributions = await fetch('/api/distributions').then(r => r.json());
-        const container = document.getElementById('distributions-container');
+      const solscanSuffix = isDevnet ? '?cluster=devnet' : '';
 
-        if (!distributions || distributions.length === 0) {
-          container.innerHTML = '<div class="no-distributions">No distributions yet. Play to earn SOL rewards every 10 minutes!</div>';
-          return;
-        }
+      container.innerHTML = distributions.map(dist => {
+        const time = new Date(dist.timestamp);
+        const timeStr = time.toLocaleString([], {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        const totalSent = dist.distribution?.totalSent?.toFixed(4) || '0';
 
-        // For devnet testing, add cluster param to Solscan links
-        const isDevnet = true; // Could detect from server
-        const solscanSuffix = isDevnet ? '?cluster=devnet' : '';
-
-        container.innerHTML = distributions.map(dist => {
-          const time = new Date(dist.timestamp);
-          const timeStr = time.toLocaleString([], {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-          const totalSent = dist.distribution?.totalSent?.toFixed(4) || '0';
-
-          const winnersHtml = dist.winners.map((w, i) => {
-            const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-            const solAmount = w.solReceived ? w.solReceived.toFixed(4) : '-';
-            const txLink = w.txSignature ?
-              `<a href="https://solscan.io/tx/${w.txSignature}${solscanSuffix}" target="_blank">View TX</a>` : '-';
-
-            return `
-              <div class="winner-row">
-                <span class="winner-rank ${rankClass}">#${w.rank}</span>
-                <span class="winner-name">${w.username}</span>
-                <span class="winner-sol">${solAmount}</span>
-                <span class="winner-tx">${txLink}</span>
-              </div>
-            `;
-          }).join('');
+        const winnersHtml = dist.winners.map((w, i) => {
+          const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+          const solAmount = w.solReceived ? w.solReceived.toFixed(4) : '-';
+          const txLink = w.txSignature ?
+            `<a href="https://solscan.io/tx/${w.txSignature}${solscanSuffix}" target="_blank">View TX</a>` : '-';
 
           return `
-            <div class="dist-card">
-              <div class="dist-header">
-                <span class="dist-time">${timeStr}</span>
-                <span class="dist-total">${totalSent} SOL</span>
-              </div>
-              <div class="dist-meta">
-                <span>${dist.playerCount} players</span>
-                <span>Top ${dist.tier} rewarded</span>
-              </div>
-              <div class="winners-list">
-                ${winnersHtml}
-              </div>
+            <div class="winner-row">
+              <span class="winner-rank ${rankClass}">#${w.rank}</span>
+              <span class="winner-name">${w.username}</span>
+              <span class="winner-sol">${solAmount}</span>
+              <span class="winner-tx">${txLink}</span>
             </div>
           `;
         }).join('');
 
-      } catch (e) {
-        console.error('Failed to fetch distributions:', e);
-      }
+        return `
+          <div class="dist-card">
+            <div class="dist-header">
+              <span class="dist-time">${timeStr}</span>
+              <span class="dist-total">${totalSent} SOL</span>
+            </div>
+            <div class="dist-meta">
+              <span>${dist.playerCount} players</span>
+              <span>Top ${dist.tier} rewarded</span>
+            </div>
+            <div class="winners-list">
+              ${winnersHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     function formatSOL(n) {
@@ -372,28 +728,17 @@
       return n.toFixed(4);
     }
 
-    function formatNum(n) {
-      if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-      if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
-      return n.toString();
-    }
-
-    function formatTime(ms) {
-      const totalSecs = Math.floor(ms / 1000);
-      const mins = Math.floor(totalSecs / 60);
-      const secs = totalSecs % 60;
-      return `${mins}:${secs.toString().padStart(2, '0')}`;
-    }
-
     // Initial fetch
-    fetchPumpStats();
+    fetchTransparency();
     fetchArena();
-    fetchDistributions();
+    fetchLeaderboard();
+    fetchPumpStats();
 
     // Refresh periodically
     setInterval(fetchArena, 5000);
-    setInterval(fetchDistributions, 30000);
-    setInterval(fetchPumpStats, 30000);
+    setInterval(fetchLeaderboard, 5000);
+    setInterval(fetchTransparency, 30000);
+    setInterval(fetchPumpStats, 60000);
   </script>
 </body>
 </html>

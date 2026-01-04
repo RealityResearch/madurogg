@@ -373,6 +373,29 @@ app.get('/api/distributions', (req, res) => {
   res.json(arena.getDistributionHistory());
 });
 
+// Get transparency stats (public - prize wallet, totals, etc.)
+app.get('/api/transparency', async (req, res) => {
+  const solanaStatus = arena.solanaDistributor.getStatus();
+  const distributions = arena.getDistributionHistory();
+
+  // Calculate total from distribution history
+  const totalFromHistory = distributions.reduce((sum, d) => {
+    return sum + (d.distribution?.totalSent || 0);
+  }, 0);
+
+  res.json({
+    prizeWallet: solanaStatus.prizeWallet,
+    network: solanaStatus.network,
+    stats: {
+      totalDistributed: solanaStatus.stats.totalDistributed || totalFromHistory,
+      distributionCount: solanaStatus.stats.distributionCount || distributions.length,
+      maxPrizePerRound: solanaStatus.maxPrizePerRound
+    },
+    recentDistributions: distributions.slice(0, 10),
+    lastUpdated: Date.now()
+  });
+});
+
 // Get site configuration (public - for How It Works page, etc.)
 app.get('/api/config', (req, res) => {
   res.json(SITE_CONFIG);
