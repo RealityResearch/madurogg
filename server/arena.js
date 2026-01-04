@@ -13,8 +13,8 @@ const Game = require('./game');
 const ARENA_CONFIG = {
   MAX_PLAYERS: 30,                    // Max active players in arena
   ROUND_DURATION: 10 * 60 * 1000,     // 10 minutes
-  COUNTDOWN_DURATION: 30 * 1000,      // 30 seconds before round starts
-  INTERMISSION: 30 * 1000,            // 30 seconds between rounds
+  COUNTDOWN_DURATION: 10 * 1000,      // 10 seconds before round starts
+  INTERMISSION: 10 * 1000,            // 10 seconds between rounds
   MIN_PLAYERS_TO_START: 1,            // Minimum to start a round (1 for solo testing)
   QUEUE_PRIORITY_HOLDER_BONUS: 100,   // Token holders get queue priority
 };
