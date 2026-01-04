@@ -368,6 +368,11 @@ app.get('/api/arena', (req, res) => {
   res.json(arena.getInfo());
 });
 
+// Get distribution history (public API)
+app.get('/api/distributions', (req, res) => {
+  res.json(arena.getDistributionHistory());
+});
+
 // Get site configuration (public - for How It Works page, etc.)
 app.get('/api/config', (req, res) => {
   res.json(SITE_CONFIG);

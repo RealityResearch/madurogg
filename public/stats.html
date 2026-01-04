@@ -105,88 +105,103 @@
       gap: 10px;
     }
 
-    .rooms-grid {
+    .distributions-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
       gap: 16px;
     }
 
-    .room-card {
+    .dist-card {
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 12px;
       padding: 20px;
+      border-left: 3px solid #4ade80;
     }
 
-    .room-header {
+    .dist-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
     }
 
-    .room-name {
-      font-weight: 600;
+    .dist-time {
+      font-size: 14px;
+      color: #888;
+    }
+
+    .dist-total {
       font-size: 18px;
+      font-weight: 700;
+      color: #4ade80;
+      font-family: 'JetBrains Mono', monospace;
     }
 
-    .room-state {
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 20px;
-      text-transform: uppercase;
-    }
-
-    .room-state.waiting { background: #3b82f6; }
-    .room-state.countdown { background: #f59e0b; }
-    .room-state.playing { background: #22c55e; }
-    .room-state.ending { background: #ef4444; }
-
-    .room-info {
+    .dist-meta {
       display: flex;
       gap: 20px;
-      font-size: 14px;
+      font-size: 12px;
       color: #888;
       margin-bottom: 16px;
     }
 
-    .leaderboard {
+    .winners-list {
       background: rgba(0,0,0,0.3);
       border-radius: 8px;
       overflow: hidden;
     }
 
-    .lb-row {
+    .winner-row {
       display: grid;
-      grid-template-columns: 40px 1fr 80px;
+      grid-template-columns: 35px 1fr 80px 60px;
       padding: 10px 12px;
       border-bottom: 1px solid rgba(255,255,255,0.05);
       align-items: center;
       font-size: 14px;
     }
 
-    .lb-row:last-child { border-bottom: none; }
+    .winner-row:last-child { border-bottom: none; }
 
-    .lb-rank {
+    .winner-rank {
       font-weight: 700;
       color: #888;
     }
 
-    .lb-rank.gold { color: #fbbf24; }
-    .lb-rank.silver { color: #9ca3af; }
-    .lb-rank.bronze { color: #cd7f32; }
+    .winner-rank.gold { color: #fbbf24; }
+    .winner-rank.silver { color: #9ca3af; }
+    .winner-rank.bronze { color: #cd7f32; }
 
-    .lb-name {
+    .winner-name {
       font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
-    .lb-score {
+    .winner-sol {
       text-align: right;
       font-family: 'JetBrains Mono', monospace;
       color: #4ade80;
     }
 
-    .no-rooms {
+    .winner-tx {
+      text-align: right;
+    }
+
+    .winner-tx a {
+      color: #9945ff;
+      text-decoration: none;
+      font-size: 12px;
+    }
+
+    .winner-tx a:hover {
+      text-decoration: underline;
+    }
+
+    .no-distributions {
       text-align: center;
       color: #888;
       padding: 40px;
@@ -217,7 +232,7 @@
 
   <main class="stats-content">
     <h1 class="stats-title">Leaderboard</h1>
-    <p class="stats-subtitle">Live stats from pump.fun and active game rooms</p>
+    <p class="stats-subtitle">Live stats from pump.fun and recent SOL distributions</p>
 
     <!-- Pump Stats -->
     <div class="pump-stats">
@@ -247,11 +262,11 @@
       </div>
     </div>
 
-    <!-- Active Rooms -->
+    <!-- Recent Distributions -->
     <div class="section">
-      <h2 class="section-title">Active Rooms</h2>
-      <div class="rooms-grid" id="rooms-container">
-        <div class="no-rooms">Loading rooms...</div>
+      <h2 class="section-title">Recent SOL Distributions</h2>
+      <div class="distributions-grid" id="distributions-container">
+        <div class="no-distributions">Loading distributions...</div>
       </div>
     </div>
   </main>
@@ -278,55 +293,76 @@
       }
     }
 
-    // Fetch rooms
-    async function fetchRooms() {
+    // Fetch arena info for player count
+    async function fetchArena() {
       try {
-        const [roomsRes, leaderboardRes] = await Promise.all([
-          fetch('/api/rooms').then(r => r.json()),
-          fetch('/api/leaderboard').then(r => r.json())
-        ]);
+        const arenaRes = await fetch('/api/arena').then(r => r.json());
+        document.getElementById('players-online').textContent = arenaRes.players || 0;
+      } catch (e) {
+        console.error('Failed to fetch arena:', e);
+      }
+    }
 
-        const container = document.getElementById('rooms-container');
+    // Fetch distribution history
+    async function fetchDistributions() {
+      try {
+        const distributions = await fetch('/api/distributions').then(r => r.json());
+        const container = document.getElementById('distributions-container');
 
-        // Update player count
-        const totalPlayers = roomsRes.reduce((sum, r) => sum + r.players, 0);
-        document.getElementById('players-online').textContent = totalPlayers;
-
-        if (roomsRes.length === 0) {
-          container.innerHTML = '<div class="no-rooms">No active rooms. Start playing to create one!</div>';
+        if (!distributions || distributions.length === 0) {
+          container.innerHTML = '<div class="no-distributions">No distributions yet. Play to earn SOL rewards every 10 minutes!</div>';
           return;
         }
 
-        container.innerHTML = roomsRes.map(room => {
-          const lb = leaderboardRes[room.id] || [];
-          const top5 = lb.slice(0, 5);
+        // For devnet testing, add cluster param to Solscan links
+        const isDevnet = true; // Could detect from server
+        const solscanSuffix = isDevnet ? '?cluster=devnet' : '';
+
+        container.innerHTML = distributions.map(dist => {
+          const time = new Date(dist.timestamp);
+          const timeStr = time.toLocaleString([], {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          const totalSent = dist.distribution?.totalSent?.toFixed(4) || '0';
+
+          const winnersHtml = dist.winners.map((w, i) => {
+            const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+            const solAmount = w.solReceived ? w.solReceived.toFixed(4) : '-';
+            const txLink = w.txSignature ?
+              `<a href="https://solscan.io/tx/${w.txSignature}${solscanSuffix}" target="_blank">View TX</a>` : '-';
+
+            return `
+              <div class="winner-row">
+                <span class="winner-rank ${rankClass}">#${w.rank}</span>
+                <span class="winner-name">${w.username}</span>
+                <span class="winner-sol">${solAmount}</span>
+                <span class="winner-tx">${txLink}</span>
+              </div>
+            `;
+          }).join('');
 
           return `
-            <div class="room-card">
-              <div class="room-header">
-                <span class="room-name">${room.id}</span>
-                <span class="room-state ${room.state}">${room.state}</span>
+            <div class="dist-card">
+              <div class="dist-header">
+                <span class="dist-time">${timeStr}</span>
+                <span class="dist-total">${totalSent} SOL</span>
               </div>
-              <div class="room-info">
-                <span>${room.players}/${room.maxPlayers} players</span>
-                ${room.timeRemaining ? `<span>${formatTime(room.timeRemaining)}</span>` : ''}
-                ${room.roundNumber ? `<span>Round ${room.roundNumber}</span>` : ''}
+              <div class="dist-meta">
+                <span>${dist.playerCount} players</span>
+                <span>Top ${dist.tier} rewarded</span>
               </div>
-              <div class="leaderboard">
-                ${top5.length > 0 ? top5.map((p, i) => `
-                  <div class="lb-row">
-                    <span class="lb-rank ${i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''}">#${i + 1}</span>
-                    <span class="lb-name">${p.username}</span>
-                    <span class="lb-score">${p.score.toLocaleString()}</span>
-                  </div>
-                `).join('') : '<div class="lb-row"><span style="color:#888;grid-column:1/-1;text-align:center;">Waiting for players...</span></div>'}
+              <div class="winners-list">
+                ${winnersHtml}
               </div>
             </div>
           `;
         }).join('');
 
       } catch (e) {
-        console.error('Failed to fetch rooms:', e);
+        console.error('Failed to fetch distributions:', e);
       }
     }
 
@@ -351,10 +387,12 @@
 
     // Initial fetch
     fetchPumpStats();
-    fetchRooms();
+    fetchArena();
+    fetchDistributions();
 
-    // Refresh every 5 seconds
-    setInterval(fetchRooms, 5000);
+    // Refresh periodically
+    setInterval(fetchArena, 5000);
+    setInterval(fetchDistributions, 30000);
     setInterval(fetchPumpStats, 30000);
   </script>
 </body>

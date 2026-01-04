@@ -59,6 +59,10 @@ class Arena {
     this.nextRewardTime = Date.now() + ARENA_CONFIG.REWARD_INTERVAL;
     this.totalRewardsDistributed = 0;
 
+    // Distribution history
+    this.distributionHistory = [];
+    this.maxDistributionHistory = 20;
+
     // Stats
     this.totalKills = 0;
     this.peakPlayers = 0;
@@ -107,6 +111,10 @@ class Arena {
 
   canJoinArena() {
     return this.players.size < ARENA_CONFIG.MAX_PLAYERS;
+  }
+
+  getDistributionHistory() {
+    return this.distributionHistory;
   }
 
   // ============ REWARD SYSTEM ============
@@ -181,8 +189,8 @@ class Arena {
       };
     });
 
-    // Broadcast reward snapshot
-    this.broadcast('rewardSnapshot', {
+    // Build snapshot data
+    const snapshotData = {
       success: true,
       winners: winnersData,
       playerCount: this.players.size,
@@ -195,7 +203,24 @@ class Arena {
         eligibleCount: distributionResult.eligibleCount,
         successCount: distributionResult.successCount
       } : null
+    };
+
+    // Broadcast reward snapshot
+    this.broadcast('rewardSnapshot', snapshotData);
+
+    // Save to distribution history
+    this.distributionHistory.unshift({
+      timestamp: Date.now(),
+      winners: winnersData,
+      playerCount: this.players.size,
+      tier: tier.winners,
+      distribution: snapshotData.distribution
     });
+
+    // Keep only last N distributions
+    if (this.distributionHistory.length > this.maxDistributionHistory) {
+      this.distributionHistory.pop();
+    }
 
     this.totalRewardsDistributed++;
     this.lastRewardTime = Date.now();

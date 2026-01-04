@@ -29,6 +29,10 @@ class Game {
     this.roundState = 'playing'; // Always playing in continuous mode
     this.nextRewardTime = Date.now() + 10 * 60 * 1000; // Default 10 min
 
+    // Distribution history
+    this.distributions = [];
+    this.maxDistributions = 5;
+
     // Track killer for spectate option
     this.lastKillerId = null;
     this.lastKillerName = null;
@@ -515,12 +519,11 @@ class Game {
     console.log('Reward snapshot:', data);
 
     if (data.success && data.winners && data.winners.length > 0) {
-      // Show winners announcement
-      const winnerText = data.winners.slice(0, 3).map(w =>
-        `#${w.rank} ${w.username} (${w.percentage}%)`
-      ).join(' | ');
+      // Show toast notification
+      this.showDistributionToast(data);
 
-      this.showAnnouncement(`REWARDS DISTRIBUTED! ${winnerText}`, 'winner');
+      // Add to distribution history
+      this.addDistribution(data);
 
       // Update next reward timer
       this.nextRewardTime = Date.now() + data.nextRewardIn;
@@ -528,6 +531,137 @@ class Game {
       this.showAnnouncement(data.message || 'Rewards skipped', 'waiting');
       this.nextRewardTime = Date.now() + data.nextRewardIn;
     }
+  }
+
+  showDistributionToast(data) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    // Determine if we're on devnet or mainnet based on distribution data
+    const isDevnet = !data.distribution || data.distribution.totalSent < 1;
+    const solscanBase = isDevnet ? 'https://solscan.io/tx/' : 'https://solscan.io/tx/';
+    const solscanSuffix = isDevnet ? '?cluster=devnet' : '';
+
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+
+    let winnersHtml = data.winners.slice(0, 5).map((w, i) => {
+      const rankClass = i === 0 ? 'first' : i === 1 ? 'second' : i === 2 ? 'third' : '';
+      const isSelf = this.playerData?.wallet && w.wallet &&
+                     this.playerData.wallet.startsWith(w.wallet.slice(0, 4));
+      const selfClass = isSelf ? 'self' : '';
+      const solAmount = w.solReceived ? `${w.solReceived.toFixed(4)} SOL` : `${w.percentage}%`;
+      const txLink = w.txSignature ?
+        `<a href="${solscanBase}${w.txSignature}${solscanSuffix}" target="_blank" class="toast-link">View TX</a>` : '';
+
+      return `
+        <div class="toast-winner ${rankClass} ${selfClass}">
+          <div class="toast-winner-info">
+            <span class="toast-rank">#${w.rank}</span>
+            <span class="toast-name">${w.username}</span>
+          </div>
+          <div>
+            <span class="toast-amount">${solAmount}</span>
+            ${txLink}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const totalSent = data.distribution?.totalSent ?
+      `${data.distribution.totalSent.toFixed(4)} SOL distributed` :
+      'Rewards distributed';
+
+    toast.innerHTML = `
+      <div class="toast-header">
+        <span class="toast-icon">💰</span>
+        <span class="toast-title">${totalSent}</span>
+      </div>
+      <div class="toast-winners">
+        ${winnersHtml}
+      </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Auto-remove after 8 seconds
+    setTimeout(() => {
+      toast.classList.add('toast-out');
+      setTimeout(() => toast.remove(), 300);
+    }, 8000);
+  }
+
+  addDistribution(data) {
+    // Add to front of array
+    this.distributions.unshift({
+      timestamp: Date.now(),
+      winners: data.winners,
+      distribution: data.distribution
+    });
+
+    // Keep only last N distributions
+    if (this.distributions.length > this.maxDistributions) {
+      this.distributions.pop();
+    }
+
+    // Update the UI
+    this.updateDistributionsList();
+  }
+
+  updateDistributionsList() {
+    const container = document.getElementById('distributions-list');
+    if (!container) return;
+
+    if (this.distributions.length === 0) {
+      container.innerHTML = '<div class="no-distributions">No distributions yet</div>';
+      return;
+    }
+
+    // Determine if devnet
+    const isDevnet = true; // Could check from server response
+    const solscanBase = 'https://solscan.io/tx/';
+    const solscanSuffix = isDevnet ? '?cluster=devnet' : '';
+
+    container.innerHTML = this.distributions.map(dist => {
+      const time = new Date(dist.timestamp);
+      const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const totalSent = dist.distribution?.totalSent?.toFixed(4) || '0';
+
+      const winnersHtml = dist.winners.slice(0, 3).map((w, i) => {
+        const rankClass = i === 0 ? 'first' : i === 1 ? 'second' : i === 2 ? 'third' : '';
+        const isSelf = this.playerData?.wallet && w.wallet &&
+                       this.playerData.wallet.startsWith(w.wallet.slice(0, 4));
+        const selfClass = isSelf ? 'self' : '';
+        const solAmount = w.solReceived ? w.solReceived.toFixed(4) : '-';
+        const txLink = w.txSignature ?
+          `<a href="${solscanBase}${w.txSignature}${solscanSuffix}" target="_blank" class="dist-tx-link">TX</a>` : '';
+
+        return `
+          <div class="dist-winner ${rankClass} ${selfClass}">
+            <div class="dist-winner-left">
+              <span class="dist-rank">#${w.rank}</span>
+              <span class="dist-name">${w.username}</span>
+            </div>
+            <div class="dist-winner-right">
+              <span class="dist-sol">${solAmount}</span>
+              ${txLink}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="distribution-item">
+          <div class="distribution-header">
+            <span class="distribution-time">${timeStr}</span>
+            <span class="distribution-total">${totalSent} SOL</span>
+          </div>
+          <div class="distribution-winners">
+            ${winnersHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
   onRoundEndPrompt(data) {
